@@ -29,15 +29,35 @@ function setStatus(text, mode = '') {
 }
 
 function normalizeResult(item, index) {
-  const width = Number(item.width || item.properties?.width || 0) || null;
-  const height = Number(item.height || item.properties?.height || 0) || null;
+  const props = item && typeof item.properties === 'object' ? item.properties : {};
+  const thumbObj = item && typeof item.thumbnail === 'object' ? item.thumbnail : {};
+  const thumbnail =
+    (typeof item?.thumbnail === 'string' ? item.thumbnail : '') ||
+    item?.thumbUrl ||
+    thumbObj?.src ||
+    props?.placeholder ||
+    props?.url ||
+    item?.imageUrl ||
+    '';
+
+  const imageUrl =
+    item?.imageUrl ||
+    props?.url ||
+    (typeof item?.thumbnail === 'string' ? item.thumbnail : '') ||
+    thumbObj?.src ||
+    item?.thumbUrl ||
+    '';
+
+  const width = Number(item?.width || props?.width || 0) || null;
+  const height = Number(item?.height || props?.height || 0) || null;
+
   return {
-    id: item.id || `${state.query}-${index}`,
-    title: item.title || state.query,
-    source: item.source || '',
-    pageUrl: item.pageUrl || item.url || '',
-    imageUrl: item.imageUrl || item.properties?.url || (typeof item.thumbnail === 'string' ? item.thumbnail : item.thumbnail?.src) || '',
-    thumbUrl: item.thumbUrl || (typeof item.thumbnail === 'string' ? item.thumbnail : item.thumbnail?.src) || item.properties?.placeholder || item.properties?.url || item.imageUrl || '',
+    id: item?.id ?? `${state.query}-${index}`,
+    title: item?.title || state.query,
+    source: item?.source || '',
+    pageUrl: item?.pageUrl || item?.url || '',
+    imageUrl,
+    thumbUrl: thumbnail,
     width,
     height,
   };
@@ -114,13 +134,28 @@ async function runSearch() {
 
   try {
     const raw = await fetchResults(query);
-    state.results = raw.map(normalizeResult).filter(x => x.thumbUrl && x.imageUrl);
+    const normalized = raw.map(normalizeResult);
+    state.results = normalized.filter(x => x.thumbUrl || x.imageUrl);
+
+    console.log('[Mosaic Magic debug]', {
+      apiCount: raw.length,
+      normalizedCount: normalized.length,
+      usableCount: state.results.length,
+      firstRaw: raw[0] || null,
+      firstNormalized: normalized[0] || null,
+    });
+
     renderResults();
 
-    if (!state.results.length) {
-      setStatus('找不到圖片，請換一個關鍵字再試一次。', 'error');
+    if (!raw.length) {
+      setStatus('API 有回應，但沒有任何搜尋結果。', 'error');
+    } else if (!state.results.length) {
+      setStatus(`API 回傳 ${raw.length} 筆，但前端解析為 0 筆。請截圖這個畫面給我。`, 'error');
     } else {
-      setStatus('');
+      setStatus(`已取得 ${raw.length} 筆搜尋結果，成功解析 ${state.results.length} 筆。`, 'debug');
+      setTimeout(() => {
+        if (statusEl.classList.contains('debug')) setStatus('');
+      }, 2500);
     }
   } catch (err) {
     console.error(err);
