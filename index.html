@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#ffffff" />
+  <title>圖片搜尋</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <div class="brand">圖片搜尋</div>
+      <div class="search-wrap">
+        <input id="searchInput" type="search" inputmode="search" autocomplete="off" placeholder="搜尋人物、角色或名人" aria-label="搜尋" />
+        <button id="searchBtn" type="button">搜尋</button>
+      </div>
+      <div class="tabs" role="tablist" aria-label="搜尋類型">
+        <button class="tab active" type="button">圖片</button>
+        <button class="tab" type="button" disabled>全部</button>
+        <button class="tab" type="button" disabled>影片</button>
+      </div>
+    </header>
+
+    <section id="intro" class="intro">
+      <h1>搜尋一位你想的人物或角色</h1>
+      <p>搜尋後，選一張最符合你心中形象的圖片。</p>
+    </section>
+
+    <section id="status" class="status hidden" aria-live="polite"></section>
+    <section id="grid" class="grid" aria-label="圖片搜尋結果"></section>
+  </main>
+
+  <dialog id="previewDialog" class="preview-dialog">
+    <div class="preview-card">
+      <button id="closePreview" class="close-btn" type="button" aria-label="關閉">×</button>
+      <img id="previewImage" alt="已選圖片預覽" />
+      <div class="preview-meta">
+        <div id="previewTitle" class="preview-title"></div>
+        <div class="preview-actions">
+          <button id="backBtn" class="secondary-btn" type="button">換一張</button>
+          <button id="confirmBtn" class="primary-btn" type="button">就選這張</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
