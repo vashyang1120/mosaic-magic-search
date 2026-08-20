@@ -36,8 +36,8 @@ function normalizeResult(item, index) {
     title: item.title || state.query,
     source: item.source || '',
     pageUrl: item.pageUrl || item.url || '',
-    imageUrl: item.imageUrl || item.properties?.url || item.thumbnail?.src || '',
-    thumbUrl: item.thumbUrl || item.thumbnail?.src || item.properties?.placeholder || item.properties?.url || '',
+    imageUrl: item.imageUrl || item.properties?.url || (typeof item.thumbnail === 'string' ? item.thumbnail : item.thumbnail?.src) || '',
+    thumbUrl: item.thumbUrl || (typeof item.thumbnail === 'string' ? item.thumbnail : item.thumbnail?.src) || item.properties?.placeholder || item.properties?.url || item.imageUrl || '',
     width,
     height,
   };
