@@ -1,70 +1,87 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#ffffff" />
   <title>圖片搜尋</title>
-  <link rel="stylesheet" href="styles.css?v=0.2.4" />
+  <link rel="stylesheet" href="styles.css?v=0.2.5" />
 </head>
 <body>
-  <main class="app">
-    <header class="topbar">
-      <form id="searchForm" class="search-wrap" role="search">
-        <input id="searchInput" type="search" inputmode="search" autocomplete="off"
-          enterkeyhint="search" placeholder="搜尋圖片" aria-label="搜尋圖片" />
-        <button id="searchBtn" type="submit" aria-label="搜尋">搜尋</button>
-      </form>
-      <nav class="tabs" aria-label="搜尋類型">
-        <span class="tab active">圖片</span>
-        <span class="tab muted">全部</span>
-        <span class="tab muted">影片</span>
-      </nav>
-    </header>
+  <header class="top-shell">
+    <div class="brand-row">
+      <div class="brand-word">Google</div>
+      <div class="account-dot" aria-hidden="true"></div>
+    </div>
 
-    <section id="intro" class="intro">
-      <div class="intro-icon" aria-hidden="true">⌕</div>
-      <h1>圖片搜尋</h1>
-      <p>輸入人物、角色或名人名稱。</p>
-    </section>
+    <form id="searchForm" class="search-row">
+      <span class="search-icon" aria-hidden="true">⌕</span>
+      <input id="searchInput" type="search" autocomplete="off" placeholder="搜尋圖片" />
+      <button id="clearBtn" class="clear-btn hidden" type="button" aria-label="清除">×</button>
+      <button class="search-btn" type="submit">搜尋</button>
+    </form>
 
-    <section id="status" class="status hidden" aria-live="polite"></section>
-    <section id="grid" class="image-grid" aria-label="圖片搜尋結果"></section>
+    <nav class="tabs" aria-label="搜尋分類">
+      <button type="button">AI 模式</button>
+      <button type="button">全部</button>
+      <button type="button" class="active">圖片</button>
+      <button type="button">影片</button>
+      <button type="button">短片</button>
+      <button type="button">新聞</button>
+      <button type="button">購物</button>
+      <button type="button">網頁</button>
+    </nav>
+  </header>
 
-    <aside id="selectionBar" class="selection-bar hidden" aria-live="polite">
-      <img id="selectionThumb" alt="" />
-      <div class="selection-copy">
-        <strong>已選定這張照片</strong>
-        <span id="selectionLabel"></span>
-      </div>
-      <button id="changeSelectionBtn" type="button">重新選擇</button>
-    </aside>
-
-    <section id="debugPanel" class="debug-panel hidden" aria-label="開發測試資訊">
-      <strong>Selection debug</strong>
-      <pre id="debugText"></pre>
-    </section>
-    <div id="sentinel" class="sentinel" aria-hidden="true"></div>
+  <main>
+    <div id="status" class="status"></div>
+    <section id="chips" class="chips hidden" aria-label="建議搜尋"></section>
+    <section id="resultsFeed" class="results-feed" aria-label="圖片搜尋結果"></section>
   </main>
 
   <dialog id="previewDialog" class="preview-dialog">
     <div class="preview-shell">
-      <div class="preview-toolbar">
-        <button id="closePreview" class="icon-btn" type="button" aria-label="返回">‹</button>
-        <div class="preview-source" id="previewSource"></div>
-        <button id="confirmBtn" class="choose-btn" type="button">選這張</button>
+      <header class="preview-header">
+        <div class="source-block">
+          <div class="source-favicon" id="sourceFavicon">●</div>
+          <div class="source-name" id="sourceName">來源網站</div>
+        </div>
+        <div class="preview-actions-top">
+          <button type="button" aria-label="更多">⋮</button>
+          <button id="closePreviewBtn" type="button" aria-label="關閉">×</button>
+        </div>
+      </header>
+
+      <div class="preview-image-wrap">
+        <img id="previewImage" alt="" />
       </div>
-      <div class="preview-stage">
-        <img id="previewImage" alt="圖片預覽" />
-      </div>
-      <div class="preview-info">
-        <div id="previewTitle" class="preview-title"></div>
-        <div id="previewDimensions" class="preview-dimensions"></div>
-      </div>
+
+      <section class="preview-meta">
+        <div class="preview-title-row">
+          <div>
+            <h2 id="previewTitle"></h2>
+            <div id="previewSourceText" class="preview-source-text"></div>
+          </div>
+          <a id="visitBtn" class="visit-btn" target="_blank" rel="noopener">造訪 ›</a>
+        </div>
+
+        <div class="preview-bottom-actions">
+          <button type="button"><span>↗</span>分享</button>
+          <button type="button"><span>▱</span>儲存</button>
+        </div>
+      </section>
+
+      <section class="related-preview">
+        <div id="relatedPreviewGrid" class="related-preview-grid"></div>
+      </section>
     </div>
   </dialog>
 
-  <script src="config.js?v=0.2.4"></script>
-  <script src="app.js?v=0.2.4"></script>
+  <section id="debugPanel" class="debug-panel hidden">
+    <strong>Current target</strong>
+    <pre id="debugText"></pre>
+  </section>
+
+  <script src="config.js?v=0.2.5"></script>
+  <script src="app.js?v=0.2.5"></script>
 </body>
 </html>

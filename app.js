@@ -1,274 +1,269 @@
-const cfg = window.MOSAIC_MAGIC_CONFIG || {};
-const API_URL = String(cfg.SEARCH_API_URL || '').replace(/\/$/, '');
-const RESULT_COUNT = Number(cfg.RESULT_COUNT || 80);
 
-const form = document.getElementById('searchForm');
-const input = document.getElementById('searchInput');
-const intro = document.getElementById('intro');
+const API_BASE = (window.MOSAIC_CONFIG && window.MOSAIC_CONFIG.apiBase) || '';
+const debugMode = new URLSearchParams(location.search).get('debug') === '1';
+
+const searchForm = document.getElementById('searchForm');
+const searchInput = document.getElementById('searchInput');
+const clearBtn = document.getElementById('clearBtn');
 const statusEl = document.getElementById('status');
-const grid = document.getElementById('grid');
+const chipsEl = document.getElementById('chips');
+const feedEl = document.getElementById('resultsFeed');
+
 const dialog = document.getElementById('previewDialog');
 const previewImage = document.getElementById('previewImage');
 const previewTitle = document.getElementById('previewTitle');
-const previewSource = document.getElementById('previewSource');
-const previewDimensions = document.getElementById('previewDimensions');
-const closePreview = document.getElementById('closePreview');
-const confirmBtn = document.getElementById('confirmBtn');
-const selectionBar = document.getElementById('selectionBar');
-const selectionThumb = document.getElementById('selectionThumb');
-const selectionLabel = document.getElementById('selectionLabel');
-const changeSelectionBtn = document.getElementById('changeSelectionBtn');
+const previewSourceText = document.getElementById('previewSourceText');
+const sourceName = document.getElementById('sourceName');
+const sourceFavicon = document.getElementById('sourceFavicon');
+const visitBtn = document.getElementById('visitBtn');
+const closePreviewBtn = document.getElementById('closePreviewBtn');
+const relatedPreviewGrid = document.getElementById('relatedPreviewGrid');
 const debugPanel = document.getElementById('debugPanel');
 const debugText = document.getElementById('debugText');
-const debugMode = new URLSearchParams(location.search).get('debug') === '1';
 
-let state = {
+const state = {
   query: '',
   results: [],
-  selected: null,
-  confirmed: null,
-  searching: false,
+  currentTarget: null,
 };
 
-function setStatus(text, mode = '') {
+function setStatus(text = '', kind = '') {
   statusEl.textContent = text;
-  statusEl.className = `status${text ? '' : ' hidden'}${mode ? ` ${mode}` : ''}`;
+  statusEl.className = `status ${kind}`.trim();
+}
+
+function hostFromUrl(url) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return '';
+  }
 }
 
 function normalizeResult(item, index) {
-  const props = item && typeof item.properties === 'object' ? item.properties : {};
-  const thumbObj = item && typeof item.thumbnail === 'object' ? item.thumbnail : {};
-  const thumbnail =
-    (typeof item?.thumbnail === 'string' ? item.thumbnail : '') ||
-    item?.thumbUrl ||
-    thumbObj?.src ||
-    props?.placeholder ||
-    props?.url ||
-    item?.imageUrl ||
-    '';
-
-  const imageUrl =
-    item?.imageUrl ||
-    props?.url ||
-    (typeof item?.thumbnail === 'string' ? item.thumbnail : '') ||
-    thumbObj?.src ||
-    item?.thumbUrl ||
-    '';
-
-  const width = Number(item?.width || props?.width || 0) || null;
-  const height = Number(item?.height || props?.height || 0) || null;
-
   return {
-    id: item?.id ?? `${state.query}-${index}`,
-    title: item?.title || state.query,
-    source: item?.source || '',
-    pageUrl: item?.pageUrl || item?.url || '',
-    imageUrl,
-    thumbUrl: thumbnail,
-    width,
-    height,
+    id: item.id ?? index,
+    title: item.title || '',
+    pageUrl: item.pageUrl || '',
+    source: item.source || hostFromUrl(item.pageUrl || ''),
+    thumbnail: item.thumbnail || '',
+    imageUrl: item.imageUrl || item.thumbnail || '',
+    width: item.width || null,
+    height: item.height || null,
   };
 }
 
-function makeTile(item) {
-  const tile = document.createElement('button');
-  tile.type = 'button';
-  tile.className = 'image-tile';
-  tile.setAttribute('aria-label', item.title || '圖片');
+async function fetchImages(query) {
+  const res = await fetch(`${API_BASE}/images?q=${encodeURIComponent(query)}`);
+  const data = await res.json();
+  if (!res.ok || !data.ok) throw new Error(data.error || 'Search failed');
+  return (data.results || []).map(normalizeResult);
+}
 
-  if (item.width && item.height) {
-    tile.style.aspectRatio = `${item.width} / ${item.height}`;
-  }
+function makeCard(item) {
+  const card = document.createElement('article');
+  card.className = 'result-card';
 
   const img = document.createElement('img');
-  img.src = item.thumbUrl;
-  img.alt = item.title || state.query;
   img.loading = 'lazy';
-  img.decoding = 'async';
-  img.referrerPolicy = 'no-referrer';
+  img.src = item.thumbnail || item.imageUrl;
+  img.alt = item.title || state.query;
+  img.onerror = () => {
+    if (img.src !== item.imageUrl && item.imageUrl) img.src = item.imageUrl;
+  };
 
-  img.addEventListener('error', () => tile.remove());
-  tile.appendChild(img);
-  if (state.confirmed?.image?.id === item.id) {
-    tile.classList.add('selected');
-  }
+  const title = document.createElement('div');
+  title.className = 'result-title';
+  title.textContent = item.title || state.query;
 
-  tile.addEventListener('click', () => openPreview(item));
-  return tile;
+  const source = document.createElement('div');
+  source.className = 'result-source';
+  source.textContent = item.source || hostFromUrl(item.pageUrl);
+
+  card.append(img, title, source);
+  card.addEventListener('click', () => openPreview(item));
+  return card;
 }
 
-function renderResults() {
-  grid.innerHTML = '';
-  const frag = document.createDocumentFragment();
-  state.results.forEach((item) => frag.appendChild(makeTile(item)));
-  grid.appendChild(frag);
-}
+function makeRelatedSearchBlock() {
+  if (!state.results.length) return null;
+  const wrap = document.createElement('section');
+  wrap.className = 'related-card';
 
-function renderConfirmedSelection() {
-  if (!state.confirmed) {
-    selectionBar.classList.add('hidden');
-    debugPanel.classList.add('hidden');
-    return;
-  }
+  const title = document.createElement('h3');
+  title.textContent = '相關搜尋';
+  wrap.appendChild(title);
 
-  const image = state.confirmed.image;
-  selectionThumb.src = image.thumbUrl || image.imageUrl;
-  selectionLabel.textContent = state.confirmed.query;
-  selectionBar.classList.remove('hidden');
+  const suffixes = ['桌布', '造型', '可愛', '照片'];
+  suffixes.forEach((suffix, i) => {
+    const row = document.createElement('div');
+    row.className = 'related-item';
 
-  if (debugMode) {
-    debugText.textContent = JSON.stringify(state.confirmed, null, 2);
-    debugPanel.classList.remove('hidden');
-  } else {
-    debugPanel.classList.add('hidden');
-  }
+    const img = document.createElement('img');
+    const seed = state.results[(i * 4 + 2) % state.results.length];
+    img.src = seed.thumbnail || seed.imageUrl;
+    img.alt = '';
 
-  renderResults();
-}
+    const text = document.createElement('span');
+    text.textContent = `${state.query} ${suffix}`;
 
-async function fetchResults(query) {
-  if (!API_URL) {
-    throw new Error('SEARCH_API_URL_NOT_CONFIGURED');
-  }
-
-  const url = new URL(`${API_URL}/images`);
-  url.searchParams.set('q', query);
-  url.searchParams.set('count', String(RESULT_COUNT));
-
-  const res = await fetch(url.toString(), {
-    method: 'GET',
-    headers: { Accept: 'application/json' },
+    row.append(img, text);
+    row.addEventListener('click', () => {
+      searchInput.value = text.textContent;
+      runSearch(text.textContent);
+    });
+    wrap.appendChild(row);
   });
 
-  if (!res.ok) {
-    let reason = '';
-    try { reason = (await res.json()).error || ''; } catch (_) {}
-    throw new Error(reason || `HTTP_${res.status}`);
-  }
-
-  const data = await res.json();
-  return Array.isArray(data.results) ? data.results : [];
+  return wrap;
 }
 
-async function runSearch() {
-  const query = input.value.trim();
-  if (!query || state.searching) {
-    if (!query) input.focus();
-    return;
-  }
-
-  state.query = query;
-  state.selected = null;
-  state.confirmed = null;
-  state.searching = true;
-  intro.classList.add('hidden');
-  grid.innerHTML = '';
-  setStatus(`正在搜尋「${query}」…`, 'loading');
-
-  try {
-    const raw = await fetchResults(query);
-    const normalized = raw.map(normalizeResult);
-    state.results = normalized.filter(x => x.thumbUrl || x.imageUrl);
-
-    console.log('[Mosaic Magic debug]', {
-      apiCount: raw.length,
-      normalizedCount: normalized.length,
-      usableCount: state.results.length,
-      firstRaw: raw[0] || null,
-      firstNormalized: normalized[0] || null,
+function renderChips() {
+  chipsEl.innerHTML = '';
+  if (!state.query) return;
+  const labels = ['短髮', `${state.query} 造型`, `${state.query} 照片`];
+  labels.forEach(label => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = label;
+    btn.addEventListener('click', () => {
+      searchInput.value = label;
+      runSearch(label);
     });
+    chipsEl.appendChild(btn);
+  });
+  chipsEl.classList.remove('hidden');
+}
 
-    renderResults();
+function renderFeed() {
+  feedEl.innerHTML = '';
+  const relatedAt = Math.min(7, Math.max(4, Math.floor(state.results.length / 5)));
 
-    if (!raw.length) {
-      setStatus('API 有回應，但沒有任何搜尋結果。', 'error');
-    } else if (!state.results.length) {
-      setStatus(`API 回傳 ${raw.length} 筆，但前端解析為 0 筆。請截圖這個畫面給我。`, 'error');
-    } else {
-      setStatus(`已取得 ${raw.length} 筆搜尋結果，成功解析 ${state.results.length} 筆。`, 'debug');
-      setTimeout(() => {
-        if (statusEl.classList.contains('debug')) setStatus('');
-      }, 2500);
+  state.results.forEach((item, index) => {
+    feedEl.appendChild(makeCard(item));
+    if (index === relatedAt) {
+      const related = makeRelatedSearchBlock();
+      if (related) feedEl.appendChild(related);
     }
-  } catch (err) {
-    console.error(err);
-    if (err.message === 'SEARCH_API_URL_NOT_CONFIGURED') {
-      setStatus('搜尋服務尚未連線。請先完成 Worker 設定。', 'error');
-    } else {
-      setStatus('目前無法取得圖片，請稍後再試。', 'error');
-    }
-  } finally {
-    state.searching = false;
-  }
+  });
+}
+
+function sourceInitial(source) {
+  return (source || '?').trim().charAt(0).toUpperCase();
+}
+
+function updateDebug() {
+  if (!debugMode) return;
+  debugPanel.classList.remove('hidden');
+  debugText.textContent = JSON.stringify(state.currentTarget, null, 2);
+}
+
+function recordTarget(item) {
+  state.currentTarget = {
+    query: state.query,
+    image: item,
+    selectedAt: new Date().toISOString(),
+  };
+  localStorage.setItem('mosaicMagicLastSelection', JSON.stringify(state.currentTarget));
+  updateDebug();
+}
+
+function renderRelatedPreview(currentItem) {
+  relatedPreviewGrid.innerHTML = '';
+  const others = state.results
+    .filter(x => x.id !== currentItem.id)
+    .slice(0, 8);
+
+  others.forEach(item => {
+    const img = document.createElement('img');
+    img.loading = 'lazy';
+    img.src = item.thumbnail || item.imageUrl;
+    img.alt = item.title || state.query;
+    img.addEventListener('click', () => openPreview(item));
+    relatedPreviewGrid.appendChild(img);
+  });
 }
 
 function openPreview(item) {
-  state.selected = item;
+  recordTarget(item);
+
+  sourceName.textContent = item.source || hostFromUrl(item.pageUrl) || '來源網站';
+  sourceFavicon.textContent = sourceInitial(sourceName.textContent);
+  previewTitle.textContent = item.title || state.query;
+  previewSourceText.textContent = item.source || hostFromUrl(item.pageUrl);
+  visitBtn.href = item.pageUrl || item.imageUrl || '#';
+
   previewImage.onerror = () => {
-    if (previewImage.src !== item.thumbUrl && item.thumbUrl) {
-      previewImage.src = item.thumbUrl;
+    if (previewImage.src !== item.thumbnail && item.thumbnail) {
+      previewImage.src = item.thumbnail;
     }
   };
-  previewImage.src = item.imageUrl || item.thumbUrl;
-  previewTitle.textContent = item.title || state.query;
-  previewSource.textContent = item.source || '圖片結果';
-  previewDimensions.textContent = item.width && item.height ? `${item.width} × ${item.height}` : '';
+  previewImage.src = item.imageUrl || item.thumbnail;
+
+  renderRelatedPreview(item);
 
   if (typeof dialog.showModal === 'function') dialog.showModal();
   else dialog.setAttribute('open', '');
 }
 
-function closeDialog() {
+function closePreview() {
   if (dialog.open && typeof dialog.close === 'function') dialog.close();
   else dialog.removeAttribute('open');
 }
 
-function confirmSelection() {
-  if (!state.selected) return;
+async function runSearch(query) {
+  query = (query || '').trim();
+  if (!query) return;
 
-  state.confirmed = {
-    query: state.query,
-    selectedAt: new Date().toISOString(),
-    image: state.selected,
-  };
+  state.query = query;
+  state.currentTarget = null;
+  setStatus('搜尋中…');
+  feedEl.innerHTML = '';
+  chipsEl.classList.add('hidden');
 
-  localStorage.setItem('mosaicMagicLastSelection', JSON.stringify(state.confirmed));
-  window.dispatchEvent(new CustomEvent('mosaic-magic-selection', { detail: state.confirmed }));
-
-  closeDialog();
-  setStatus('圖片已選定。請記住這張照片。', 'confirmed');
-  grid.classList.add('selection-locked');
-  renderConfirmedSelection();
-
-  console.log('[Mosaic Magic selection]', state.confirmed);
+  try {
+    const results = await fetchImages(query);
+    state.results = results;
+    renderChips();
+    renderFeed();
+    setStatus(results.length ? '' : '找不到圖片，請換一個關鍵字再試一次。', results.length ? '' : 'error');
+  } catch (err) {
+    console.error(err);
+    setStatus('搜尋服務暫時無法使用，請稍後再試。', 'error');
+  }
 }
 
-form.addEventListener('submit', (e) => {
+searchForm.addEventListener('submit', e => {
   e.preventDefault();
-  grid.classList.remove('selection-locked');
-  runSearch();
-});
-closePreview.addEventListener('click', closeDialog);
-confirmBtn.addEventListener('click', confirmSelection);
-changeSelectionBtn.addEventListener('click', () => {
-  selectionBar.classList.add('hidden');
-  setStatus('請重新選擇一張圖片。');
-  grid.classList.remove('selection-locked');
-});
-dialog.addEventListener('click', (e) => {
-  if (e.target === dialog) closeDialog();
+  runSearch(searchInput.value);
 });
 
-const params = new URLSearchParams(location.search);
-if (params.get('q')) input.value = params.get('q');
+searchInput.addEventListener('input', () => {
+  clearBtn.classList.toggle('hidden', !searchInput.value);
+});
 
+clearBtn.addEventListener('click', () => {
+  searchInput.value = '';
+  searchInput.focus();
+  clearBtn.classList.add('hidden');
+});
+
+closePreviewBtn.addEventListener('click', closePreview);
+
+dialog.addEventListener('click', e => {
+  if (e.target === dialog) closePreview();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closePreview();
+});
 
 if (debugMode) {
   try {
     const saved = JSON.parse(localStorage.getItem('mosaicMagicLastSelection') || 'null');
-    if (saved?.image) {
-      state.confirmed = saved;
-      renderConfirmedSelection();
+    if (saved) {
+      state.currentTarget = saved;
+      updateDebug();
     }
-  } catch (_) {}
+  } catch {}
 }
