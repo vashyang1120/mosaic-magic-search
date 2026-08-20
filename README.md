@@ -1,31 +1,19 @@
-# Mosaic Magic — Spectator Search Prototype v0.1
+# Mosaic Magic — Spectator Search Prototype v0.2.1
 
-這是第一階段「觀眾端搜尋頁」測試版。
+本版已接上正式 Cloudflare Worker + Brave Image Search。
 
-## 本版目的
+## 已完成
+- 真實圖片搜尋
+- 不固定三欄的圖片瀑布流
+- 點圖全螢幕預覽
+- 選定 exact target
+- 保存 query + exact image 到 localStorage
 
-先驗證：
-1. 手機搜尋流程是否自然。
-2. 圖片結果用手機三欄顯示是否合適。
-3. 觀眾能否點圖、放大確認、再按「就選這張」。
-4. 系統是否能保存 `query + selected image`。
+## 正式搜尋端點
+`https://mosaic-magic-search-api.vashyang1120.workers.dev/images`
 
-## 注意
+## GitHub Pages 更新
+將根目錄的 `index.html`、`app.js`、`styles.css`、`config.js` 全部覆蓋成此版本。
+`README.md` 可一起更新。
 
-v0.1 的圖片來源目前是 demo 圖片，用來測完整 UI/UX 與選圖資料流。
-下一版會把 `buildDemoResults()` 換成 Google Programmable Search 的正式圖片結果來源。
-
-選定資料目前會：
-- 存入 localStorage key: `mosaicMagicLastSelection`
-- dispatch `mosaic-magic-selection` custom event
-- 寫入 console 供開發測試
-
-## 本機啟動
-
-不要直接雙擊 index.html，建議用 HTTP server：
-
-```bash
-python3 -m http.server 8080
-```
-
-瀏覽器開：http://localhost:8080
+`worker/` 資料夾不需要上傳到 GitHub Pages；Cloudflare Worker 已另行部署。

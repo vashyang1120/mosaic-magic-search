@@ -1,13 +1,18 @@
+const cfg = window.MOSAIC_MAGIC_CONFIG || {};
+const API_URL = String(cfg.SEARCH_API_URL || '').replace(/\/$/, '');
+const RESULT_COUNT = Number(cfg.RESULT_COUNT || 80);
+
+const form = document.getElementById('searchForm');
 const input = document.getElementById('searchInput');
-const searchBtn = document.getElementById('searchBtn');
 const intro = document.getElementById('intro');
 const statusEl = document.getElementById('status');
 const grid = document.getElementById('grid');
 const dialog = document.getElementById('previewDialog');
 const previewImage = document.getElementById('previewImage');
 const previewTitle = document.getElementById('previewTitle');
+const previewSource = document.getElementById('previewSource');
+const previewDimensions = document.getElementById('previewDimensions');
 const closePreview = document.getElementById('closePreview');
-const backBtn = document.getElementById('backBtn');
 const confirmBtn = document.getElementById('confirmBtn');
 
 let state = {
@@ -15,84 +20,129 @@ let state = {
   results: [],
   selected: null,
   confirmed: null,
+  searching: false,
 };
 
-const demoPortraits = [
-  ['portrait', 1011], ['actor', 1005], ['face', 1027], ['person', 64], ['celebrity', 823],
-  ['portrait', 996], ['character', 342], ['face', 433], ['hero', 177], ['person', 91],
-  ['portrait', 447], ['actor', 550], ['face', 660], ['character', 725], ['hero', 836],
-  ['portrait', 901], ['actor', 1025], ['face', 237], ['person', 349], ['character', 669],
-  ['portrait', 823], ['hero', 91], ['actor', 342], ['face', 64]
-];
-
-function buildDemoResults(query) {
-  return demoPortraits.map(([, seed], i) => ({
-    id: `${query}-${i}`,
-    title: `${query} 圖片 ${i + 1}`,
-    imageUrl: `https://picsum.photos/seed/${encodeURIComponent(query)}-${seed}-${i}/600/600`,
-    thumbUrl: `https://picsum.photos/seed/${encodeURIComponent(query)}-${seed}-${i}/360/360`,
-    source: 'demo'
-  }));
+function setStatus(text, mode = '') {
+  statusEl.textContent = text;
+  statusEl.className = `status${text ? '' : ' hidden'}${mode ? ` ${mode}` : ''}`;
 }
 
-function setStatus(text) {
-  statusEl.textContent = text;
-  statusEl.classList.toggle('hidden', !text);
+function normalizeResult(item, index) {
+  const width = Number(item.width || item.properties?.width || 0) || null;
+  const height = Number(item.height || item.properties?.height || 0) || null;
+  return {
+    id: item.id || `${state.query}-${index}`,
+    title: item.title || state.query,
+    source: item.source || '',
+    pageUrl: item.pageUrl || item.url || '',
+    imageUrl: item.imageUrl || item.properties?.url || item.thumbnail?.src || '',
+    thumbUrl: item.thumbUrl || item.thumbnail?.src || item.properties?.placeholder || item.properties?.url || '',
+    width,
+    height,
+  };
+}
+
+function makeTile(item) {
+  const tile = document.createElement('button');
+  tile.type = 'button';
+  tile.className = 'image-tile';
+  tile.setAttribute('aria-label', item.title || '圖片');
+
+  if (item.width && item.height) {
+    tile.style.aspectRatio = `${item.width} / ${item.height}`;
+  }
+
+  const img = document.createElement('img');
+  img.src = item.thumbUrl;
+  img.alt = item.title || state.query;
+  img.loading = 'lazy';
+  img.decoding = 'async';
+  img.referrerPolicy = 'no-referrer';
+
+  img.addEventListener('error', () => tile.remove());
+  tile.appendChild(img);
+  tile.addEventListener('click', () => openPreview(item));
+  return tile;
 }
 
 function renderResults() {
   grid.innerHTML = '';
-  state.results.forEach((item) => {
-    const tile = document.createElement('button');
-    tile.type = 'button';
-    tile.className = 'tile';
-    tile.setAttribute('aria-label', item.title);
+  const frag = document.createDocumentFragment();
+  state.results.forEach((item) => frag.appendChild(makeTile(item)));
+  grid.appendChild(frag);
+}
 
-    const img = document.createElement('img');
-    img.src = item.thumbUrl;
-    img.alt = item.title;
-    img.loading = 'lazy';
+async function fetchResults(query) {
+  if (!API_URL) {
+    throw new Error('SEARCH_API_URL_NOT_CONFIGURED');
+  }
 
-    const label = document.createElement('div');
-    label.className = 'tile-label';
-    label.textContent = item.title;
+  const url = new URL(`${API_URL}/images`);
+  url.searchParams.set('q', query);
+  url.searchParams.set('count', String(RESULT_COUNT));
 
-    tile.append(img, label);
-    tile.addEventListener('click', () => openPreview(item));
-    grid.appendChild(tile);
+  const res = await fetch(url.toString(), {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
   });
+
+  if (!res.ok) {
+    let reason = '';
+    try { reason = (await res.json()).error || ''; } catch (_) {}
+    throw new Error(reason || `HTTP_${res.status}`);
+  }
+
+  const data = await res.json();
+  return Array.isArray(data.results) ? data.results : [];
 }
 
 async function runSearch() {
   const query = input.value.trim();
-  if (!query) {
-    input.focus();
+  if (!query || state.searching) {
+    if (!query) input.focus();
     return;
   }
 
   state.query = query;
   state.selected = null;
   state.confirmed = null;
+  state.searching = true;
   intro.classList.add('hidden');
-  setStatus(`正在搜尋「${query}」的圖片…`);
+  grid.innerHTML = '';
+  setStatus(`正在搜尋「${query}」…`, 'loading');
 
-  // Prototype v0.1: 先使用 demo data 跑完整互動。
-  // 下一版只需要把這裡替換成 Google Programmable Search resultsReady 資料即可。
-  await new Promise(r => setTimeout(r, 350));
-  state.results = buildDemoResults(query);
-  renderResults();
-  setStatus(`「${query}」的圖片結果 — 請選一張最符合你心中形象的照片`);
+  try {
+    const raw = await fetchResults(query);
+    state.results = raw.map(normalizeResult).filter(x => x.thumbUrl && x.imageUrl);
+    renderResults();
+
+    if (!state.results.length) {
+      setStatus('找不到圖片，請換一個關鍵字再試一次。', 'error');
+    } else {
+      setStatus('');
+    }
+  } catch (err) {
+    console.error(err);
+    if (err.message === 'SEARCH_API_URL_NOT_CONFIGURED') {
+      setStatus('搜尋服務尚未連線。請先完成 Worker 設定。', 'error');
+    } else {
+      setStatus('目前無法取得圖片，請稍後再試。', 'error');
+    }
+  } finally {
+    state.searching = false;
+  }
 }
 
 function openPreview(item) {
   state.selected = item;
   previewImage.src = item.imageUrl;
-  previewTitle.textContent = item.title;
-  if (typeof dialog.showModal === 'function') {
-    dialog.showModal();
-  } else {
-    dialog.setAttribute('open', '');
-  }
+  previewTitle.textContent = item.title || state.query;
+  previewSource.textContent = item.source || '圖片結果';
+  previewDimensions.textContent = item.width && item.height ? `${item.width} × ${item.height}` : '';
+
+  if (typeof dialog.showModal === 'function') dialog.showModal();
+  else dialog.setAttribute('open', '');
 }
 
 function closeDialog() {
@@ -102,6 +152,7 @@ function closeDialog() {
 
 function confirmSelection() {
   if (!state.selected) return;
+
   state.confirmed = {
     query: state.query,
     selectedAt: new Date().toISOString(),
@@ -112,22 +163,22 @@ function confirmSelection() {
   window.dispatchEvent(new CustomEvent('mosaic-magic-selection', { detail: state.confirmed }));
 
   closeDialog();
-  setStatus('已選定圖片。請記住這張照片。');
+  setStatus('圖片已選定。請記住這張照片。', 'confirmed');
+  grid.classList.add('selection-locked');
 
-  // 開發測試用途：不在觀眾畫面顯示秘密資料，只寫入 console。
   console.log('[Mosaic Magic selection]', state.confirmed);
 }
 
-searchBtn.addEventListener('click', runSearch);
-input.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') runSearch();
+form.addEventListener('submit', (e) => {
+  e.preventDefault();
+  grid.classList.remove('selection-locked');
+  runSearch();
 });
 closePreview.addEventListener('click', closeDialog);
-backBtn.addEventListener('click', closeDialog);
 confirmBtn.addEventListener('click', confirmSelection);
+dialog.addEventListener('click', (e) => {
+  if (e.target === dialog) closeDialog();
+});
 
-// 開發便利：網址 ?q=Batman 可自動帶入搜尋詞。
 const params = new URLSearchParams(location.search);
-if (params.get('q')) {
-  input.value = params.get('q');
-}
+if (params.get('q')) input.value = params.get('q');

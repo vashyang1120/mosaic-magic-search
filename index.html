@@ -10,41 +10,47 @@
 <body>
   <main class="app">
     <header class="topbar">
-      <div class="brand">圖片搜尋</div>
-      <div class="search-wrap">
-        <input id="searchInput" type="search" inputmode="search" autocomplete="off" placeholder="搜尋人物、角色或名人" aria-label="搜尋" />
-        <button id="searchBtn" type="button">搜尋</button>
-      </div>
-      <div class="tabs" role="tablist" aria-label="搜尋類型">
-        <button class="tab active" type="button">圖片</button>
-        <button class="tab" type="button" disabled>全部</button>
-        <button class="tab" type="button" disabled>影片</button>
-      </div>
+      <form id="searchForm" class="search-wrap" role="search">
+        <input id="searchInput" type="search" inputmode="search" autocomplete="off"
+          enterkeyhint="search" placeholder="搜尋圖片" aria-label="搜尋圖片" />
+        <button id="searchBtn" type="submit" aria-label="搜尋">搜尋</button>
+      </form>
+      <nav class="tabs" aria-label="搜尋類型">
+        <span class="tab active">圖片</span>
+        <span class="tab muted">全部</span>
+        <span class="tab muted">影片</span>
+      </nav>
     </header>
 
     <section id="intro" class="intro">
-      <h1>搜尋一位你想的人物或角色</h1>
-      <p>搜尋後，選一張最符合你心中形象的圖片。</p>
+      <div class="intro-icon" aria-hidden="true">⌕</div>
+      <h1>圖片搜尋</h1>
+      <p>輸入人物、角色或名人名稱。</p>
     </section>
 
     <section id="status" class="status hidden" aria-live="polite"></section>
-    <section id="grid" class="grid" aria-label="圖片搜尋結果"></section>
+    <section id="grid" class="image-grid" aria-label="圖片搜尋結果"></section>
+    <div id="sentinel" class="sentinel" aria-hidden="true"></div>
   </main>
 
   <dialog id="previewDialog" class="preview-dialog">
-    <div class="preview-card">
-      <button id="closePreview" class="close-btn" type="button" aria-label="關閉">×</button>
-      <img id="previewImage" alt="已選圖片預覽" />
-      <div class="preview-meta">
+    <div class="preview-shell">
+      <div class="preview-toolbar">
+        <button id="closePreview" class="icon-btn" type="button" aria-label="返回">‹</button>
+        <div class="preview-source" id="previewSource"></div>
+        <button id="confirmBtn" class="choose-btn" type="button">選這張</button>
+      </div>
+      <div class="preview-stage">
+        <img id="previewImage" alt="圖片預覽" />
+      </div>
+      <div class="preview-info">
         <div id="previewTitle" class="preview-title"></div>
-        <div class="preview-actions">
-          <button id="backBtn" class="secondary-btn" type="button">換一張</button>
-          <button id="confirmBtn" class="primary-btn" type="button">就選這張</button>
-        </div>
+        <div id="previewDimensions" class="preview-dimensions"></div>
       </div>
     </div>
   </dialog>
 
+  <script src="config.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
