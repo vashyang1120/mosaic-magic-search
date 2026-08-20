@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#ffffff" />
   <title>圖片搜尋</title>
-  <link rel="stylesheet" href="styles.css?v=0.2.3" />
+  <link rel="stylesheet" href="styles.css?v=0.2.4" />
 </head>
 <body>
   <main class="app">
@@ -30,6 +30,20 @@
 
     <section id="status" class="status hidden" aria-live="polite"></section>
     <section id="grid" class="image-grid" aria-label="圖片搜尋結果"></section>
+
+    <aside id="selectionBar" class="selection-bar hidden" aria-live="polite">
+      <img id="selectionThumb" alt="" />
+      <div class="selection-copy">
+        <strong>已選定這張照片</strong>
+        <span id="selectionLabel"></span>
+      </div>
+      <button id="changeSelectionBtn" type="button">重新選擇</button>
+    </aside>
+
+    <section id="debugPanel" class="debug-panel hidden" aria-label="開發測試資訊">
+      <strong>Selection debug</strong>
+      <pre id="debugText"></pre>
+    </section>
     <div id="sentinel" class="sentinel" aria-hidden="true"></div>
   </main>
 
@@ -50,7 +64,7 @@
     </div>
   </dialog>
 
-  <script src="config.js?v=0.2.3"></script>
-  <script src="app.js?v=0.2.3"></script>
+  <script src="config.js?v=0.2.4"></script>
+  <script src="app.js?v=0.2.4"></script>
 </body>
 </html>

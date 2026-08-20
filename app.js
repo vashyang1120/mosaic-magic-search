@@ -14,6 +14,13 @@ const previewSource = document.getElementById('previewSource');
 const previewDimensions = document.getElementById('previewDimensions');
 const closePreview = document.getElementById('closePreview');
 const confirmBtn = document.getElementById('confirmBtn');
+const selectionBar = document.getElementById('selectionBar');
+const selectionThumb = document.getElementById('selectionThumb');
+const selectionLabel = document.getElementById('selectionLabel');
+const changeSelectionBtn = document.getElementById('changeSelectionBtn');
+const debugPanel = document.getElementById('debugPanel');
+const debugText = document.getElementById('debugText');
+const debugMode = new URLSearchParams(location.search).get('debug') === '1';
 
 let state = {
   query: '',
@@ -82,6 +89,10 @@ function makeTile(item) {
 
   img.addEventListener('error', () => tile.remove());
   tile.appendChild(img);
+  if (state.confirmed?.image?.id === item.id) {
+    tile.classList.add('selected');
+  }
+
   tile.addEventListener('click', () => openPreview(item));
   return tile;
 }
@@ -91,6 +102,28 @@ function renderResults() {
   const frag = document.createDocumentFragment();
   state.results.forEach((item) => frag.appendChild(makeTile(item)));
   grid.appendChild(frag);
+}
+
+function renderConfirmedSelection() {
+  if (!state.confirmed) {
+    selectionBar.classList.add('hidden');
+    debugPanel.classList.add('hidden');
+    return;
+  }
+
+  const image = state.confirmed.image;
+  selectionThumb.src = image.thumbUrl || image.imageUrl;
+  selectionLabel.textContent = state.confirmed.query;
+  selectionBar.classList.remove('hidden');
+
+  if (debugMode) {
+    debugText.textContent = JSON.stringify(state.confirmed, null, 2);
+    debugPanel.classList.remove('hidden');
+  } else {
+    debugPanel.classList.add('hidden');
+  }
+
+  renderResults();
 }
 
 async function fetchResults(query) {
@@ -171,7 +204,12 @@ async function runSearch() {
 
 function openPreview(item) {
   state.selected = item;
-  previewImage.src = item.imageUrl;
+  previewImage.onerror = () => {
+    if (previewImage.src !== item.thumbUrl && item.thumbUrl) {
+      previewImage.src = item.thumbUrl;
+    }
+  };
+  previewImage.src = item.imageUrl || item.thumbUrl;
   previewTitle.textContent = item.title || state.query;
   previewSource.textContent = item.source || '圖片結果';
   previewDimensions.textContent = item.width && item.height ? `${item.width} × ${item.height}` : '';
@@ -200,6 +238,7 @@ function confirmSelection() {
   closeDialog();
   setStatus('圖片已選定。請記住這張照片。', 'confirmed');
   grid.classList.add('selection-locked');
+  renderConfirmedSelection();
 
   console.log('[Mosaic Magic selection]', state.confirmed);
 }
@@ -211,9 +250,25 @@ form.addEventListener('submit', (e) => {
 });
 closePreview.addEventListener('click', closeDialog);
 confirmBtn.addEventListener('click', confirmSelection);
+changeSelectionBtn.addEventListener('click', () => {
+  selectionBar.classList.add('hidden');
+  setStatus('請重新選擇一張圖片。');
+  grid.classList.remove('selection-locked');
+});
 dialog.addEventListener('click', (e) => {
   if (e.target === dialog) closeDialog();
 });
 
 const params = new URLSearchParams(location.search);
 if (params.get('q')) input.value = params.get('q');
+
+
+if (debugMode) {
+  try {
+    const saved = JSON.parse(localStorage.getItem('mosaicMagicLastSelection') || 'null');
+    if (saved?.image) {
+      state.confirmed = saved;
+      renderConfirmedSelection();
+    }
+  } catch (_) {}
+}
