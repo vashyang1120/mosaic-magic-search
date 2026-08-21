@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111111">
 <title>Mosaic Gallery</title>
-<link rel="stylesheet" href="styles.css?v=0.4.0">
+<link rel="stylesheet" href="styles.css?v=0.5.0">
 </head>
 <body>
 <main class="app">
@@ -18,33 +18,29 @@
   <small id="conn">連線中…</small>
 </section>
 
-<section id="cue" class="cue hidden">
-  <div class="kicker">最新目標</div>
-  <article class="card">
-    <img id="cueImg" alt="">
-    <div class="copy">
-      <div id="cueQuery" class="query"></div>
-      <div id="cueSource" class="source"></div>
+<section id="candidateView" class="candidate-view hidden">
+  <div class="candidate-head">
+    <div>
+      <div class="kicker">收到搜尋</div>
+      <div id="queryTitle" class="query-title"></div>
     </div>
-  </article>
-  <div class="actions">
-    <button id="hideBtn">隱藏提示</button>
-    <button id="refreshBtn">重新抓圖</button>
+    <div id="totalTime" class="total-time"></div>
   </div>
+  <div class="hint">4 張候選圖會同時預載；圖片完成載入即標記 Ready。點圖可立即選定。</div>
+  <div id="candidateGrid" class="candidate-grid"></div>
 </section>
 
-<section id="stealth" class="stealth hidden">
-  <div class="gallery">
-    <div>🎈</div><div>🎪</div><div>✨</div>
-    <div>🎉</div><div>🎈</div><div>🎩</div>
-    <div>🎂</div><div>🎈</div><div>📸</div>
-  </div>
-  <button id="showBtn" class="showBtn">顯示提示</button>
+<section id="selectedView" class="selected-view hidden">
+  <div class="kicker">已選定目標</div>
+  <img id="selectedImage" alt="">
+  <div id="selectedQuery" class="selected-query"></div>
+  <div id="selectedTiming" class="selected-timing"></div>
+  <button id="backBtn" type="button">返回候選圖</button>
 </section>
 
 <section id="debug" class="debug hidden"><pre id="debugText"></pre></section>
 </main>
-<script src="config.js?v=0.4.0"></script>
-<script src="app.js?v=0.4.0"></script>
+<script src="config.js?v=0.5.0"></script>
+<script src="app.js?v=0.5.0"></script>
 </body>
 </html>

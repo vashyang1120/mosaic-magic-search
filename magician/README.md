@@ -1,29 +1,21 @@
-# Mosaic Magic — Magician v0.4.0
+# Mosaic Magic — Magician v0.5.0 Speed Test
 
-第一個魔術師端測試版。
+這版只測「正式 Mosaic 前的準備時間」，不改已經成功的 Spectator / Durable Object 傳輸鏈。
 
-## 目的
-先驗證：
-Spectator 輸入人名 → Cloudflare `/latest` → 魔術師手機收到 query → 自動抓人物圖片。
+## 功能
+- 收到新 query 後一次抓 4 張候選人物圖。
+- 4 張圖片平行預載。
+- 每張顯示從「Magician 收到 query」到圖片 Ready 的秒數。
+- 顯示 4/4 Ready 的總時間。
+- 點任一候選圖立即進入選定畫面。
 
-## 部署建議
-把這五個檔案放到現有 GitHub repository 的 `magician/` 資料夾：
+## 重要
+這版還沒有生成正式 Mosaic。
+原因是正式 Mosaic 的真實速度高度取決於「你之後放進偽相簿的真實照片素材池」。
+如果現在用假素材測 Mosaic，會得到誤導性的速度數字。
 
-magician/
-- index.html
-- app.js
-- styles.css
-- config.js
-- README.md
-
-部署後網址：
-https://vashyang1120.github.io/mosaic-magic-search/magician/
-
-## 測試
-先在魔術師手機開 magician 網址，保持畫面開啟。
-再用另一支 Android 手機走 spectator v0.3.2 流程並搜尋人物。
-如果成功，魔術師頁面約 1 秒內會顯示人物名稱與一張圖片。
-
-`?debug=1` 可顯示完整狀態。
-
-注意：目前 `/latest` 是 Cloudflare Worker 記憶體暫存，先用來驗證流程。若跨裝置偶發收不到，下一步會改成持久化 Session。
+下一階段會加入：
+- 你自行選擇的手機真實照片素材池
+- 前 3～5 列偽相簿真實照片
+- 每張素材預先分析平均色 / 亮度 / 縮圖
+- 4 個候選目標的 Mosaic 背景預生成
