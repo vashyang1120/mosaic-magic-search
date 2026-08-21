@@ -107,35 +107,66 @@ function renderChips() {
   });
 }
 
-async function enterInputMode() {
+function finishEnterInputMode() {
   if (inputMode) return;
   inputMode = true;
   appShell.classList.add('input-mode');
   document.body.classList.add('fullscreen-like');
 
-  // Clear the demonstration query only after the magician taps the field.
+  input.readOnly = false;
   input.value = '';
   input.placeholder = '搜尋圖片';
   clearBtn.classList.add('hidden');
 
-  // requestFullscreen MUST be triggered by a user gesture.
-  try {
-    const target = document.documentElement;
-    if (!document.fullscreenElement && target.requestFullscreen) {
-      await target.requestFullscreen({ navigationUI: 'hide' });
-    }
-  } catch (_) {
-    // Fallback remains usable even without fullscreen support.
-  }
+  // Wait until the fullscreen transition has started/settled, then summon keyboard.
+  setTimeout(() => {
+    input.focus({ preventScroll: true });
+    try { input.setSelectionRange(0, 0); } catch (_) {}
+  }, 120);
+}
 
-  setTimeout(() => input.focus(), 80);
+function requestFullscreenDirectlyFromGesture() {
+  const target = appShell;
+
+  try {
+    if (document.fullscreenElement) {
+      finishEnterInputMode();
+      return;
+    }
+
+    let promise = null;
+
+    if (target.requestFullscreen) {
+      // Critical: requestFullscreen is the FIRST privileged action in this tap.
+      promise = target.requestFullscreen({ navigationUI: 'hide' });
+    } else if (target.webkitRequestFullscreen) {
+      // Legacy Chromium/Samsung fallback.
+      target.webkitRequestFullscreen();
+    }
+
+    if (promise && typeof promise.then === 'function') {
+      promise.then(
+        () => finishEnterInputMode(),
+        (err) => {
+          console.warn('[Mosaic Magic] fullscreen rejected:', err);
+          finishEnterInputMode();
+        }
+      );
+    } else {
+      // API unavailable or legacy synchronous call.
+      setTimeout(() => finishEnterInputMode(), 40);
+    }
+  } catch (err) {
+    console.warn('[Mosaic Magic] fullscreen error:', err);
+    finishEnterInputMode();
+  }
 }
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
 
   if (!inputMode) {
-    await enterInputMode();
+    requestFullscreenDirectlyFromGesture();
     return;
   }
 
@@ -154,11 +185,12 @@ form.addEventListener('submit', async (e) => {
   location.replace(target);
 });
 
-// Tapping the existing demonstration search field is the secret transition.
-input.addEventListener('pointerdown', async (e) => {
+// The demo field is readonly. This click is reserved entirely for the
+// privileged fullscreen request, then we turn it into a real input.
+input.addEventListener('click', (e) => {
   if (!inputMode) {
     e.preventDefault();
-    await enterInputMode();
+    requestFullscreenDirectlyFromGesture();
   }
 });
 
@@ -195,3 +227,22 @@ async function init() {
 }
 
 init();
+
+
+const fsDebug = new URLSearchParams(location.search).get('fsdebug') === '1';
+if (fsDebug) {
+  const box = document.createElement('div');
+  box.style.cssText = 'position:fixed;left:8px;right:8px;bottom:8px;z-index:9999;background:#111;color:#fff;padding:8px;border-radius:8px;font:12px monospace;white-space:pre-wrap';
+  const update = (extra='') => {
+    box.textContent =
+      `fullscreenEnabled=${document.fullscreenEnabled}\n` +
+      `requestFullscreen=${!!appShell.requestFullscreen}\n` +
+      `webkitRequestFullscreen=${!!appShell.webkitRequestFullscreen}\n` +
+      `fullscreenElement=${!!document.fullscreenElement}\n` +
+      extra;
+  };
+  document.body.appendChild(box);
+  update();
+  document.addEventListener('fullscreenchange', () => update('fullscreenchange'));
+  document.addEventListener('fullscreenerror', () => update('fullscreenerror'));
+}

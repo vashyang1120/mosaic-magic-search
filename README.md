@@ -1,4 +1,4 @@
-# Mosaic Magic — Spectator Demo Fullscreen Handoff v0.3.1
+# Mosaic Magic — Spectator Demo Fullscreen Handoff v0.3.2
 
 ## 新流程
 1. 先顯示一個固定人物的完整「已搜尋圖片」頁面，預設是「周杰倫」。
@@ -31,3 +31,11 @@ DEMO_CHIPS: ['演唱會','專輯','電影','近照']
 
 ## 注意
 Fullscreen API 受手機瀏覽器支援限制。支援時，點搜尋框會隱藏瀏覽器 UI；不支援時會自動 fallback 成一般頁面切換，功能仍可使用。
+
+
+## v0.3.2 Fullscreen gesture fix
+- 示範搜尋框初始改成 readonly，第一次點擊不會先觸發鍵盤或 focus。
+- 第一次 click 的第一個 privileged action 直接執行 `requestFullscreen({navigationUI:'hide'})`。
+- fullscreen 成功／失敗後才切換輸入模式、清空示範關鍵字並 focus 鍵盤。
+- 補 `webkitRequestFullscreen` fallback。
+- 測試網址加 `?fsdebug=1` 可顯示 Fullscreen API 支援狀態。
