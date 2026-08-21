@@ -1,60 +1,99 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#ffffff" />
-  <title>Google</title>
-  <link rel="stylesheet" href="styles.css?v=0.3.2" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111111">
+<title>Mosaic Gallery</title>
+<link rel="stylesheet" href="styles.css?v=0.7.0">
 </head>
 <body>
-  <main id="appShell" class="page-shell">
-    <header class="incognito-header">
-      <button class="menu-btn" type="button" aria-label="選單">
-        <span></span><span></span><span></span>
-      </button>
-      <div class="google-logo" aria-label="Google">
-        <span class="b">G</span><span class="r">o</span><span class="y">o</span><span class="b">g</span><span class="g">l</span><span class="r">e</span>
-      </div>
-      <button class="signin-btn" type="button">登入</button>
-    </header>
+<main class="app">
+<header class="topbar"><strong>相簿</strong><span>•••</span></header>
 
-    <form id="handoffForm" class="search-box">
-      <span class="search-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><path d="M10.5 4a6.5 6.5 0 1 0 4.09 11.56L20 20.97 20.97 20l-5.41-5.41A6.5 6.5 0 0 0 10.5 4Zm0 2a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9Z"/></svg>
-      </span>
-      <input id="queryInput" type="search" autocomplete="off" readonly autocapitalize="none" spellcheck="false" />
-      <button id="clearBtn" class="clear-btn hidden" type="button" aria-label="清除">×</button>
-      <span class="mic-icon" aria-hidden="true">
-        <svg viewBox="0 0 24 24">
-          <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm5-3a1 1 0 1 0-2 0 3 3 0 0 1-6 0 1 1 0 1 0-2 0 5 5 0 0 0 4 4.9V19H8a1 1 0 1 0 0 2h8a1 1 0 1 0 0-2h-3v-3.1A5 5 0 0 0 17 11Z"/>
-        </svg>
-      </span>
-    </form>
+<section id="waiting" class="waiting">
+  <div class="spinner">◌</div>
+  <h1>等待新的搜尋</h1>
+  <p>保持這個頁面開啟即可。</p>
+  <small id="conn">連線中…</small>
+</section>
 
-    <nav class="tabs" aria-label="搜尋分類">
-      <span>AI 模式</span>
-      <span>全部</span>
-      <span class="active">圖片</span>
-      <span>影片</span>
-      <span>短片</span>
-      <span>新聞</span>
-      <span>購物</span>
-      <span>網頁</span>
-    </nav>
+<section id="candidateView" class="candidate-view hidden">
+  <div class="candidate-head">
+    <div>
+      <div class="kicker">收到搜尋</div>
+      <div id="queryTitle" class="query-title"></div>
+    </div>
+    <div id="totalTime" class="total-time"></div>
+  </div>
+  <div class="hint">4 張 Brave 候選照同步預載。這版會在每張圖 Ready 後，立即於背景建立「高速 Mosaic 測試圖」。</div>
+  <div id="candidateGrid" class="candidate-grid"></div>
+</section>
 
-    <section id="demoContent" class="demo-content">
-      <div id="chips" class="chips"></div>
-      <div id="status" class="status" aria-live="polite"></div>
-      <div id="demoGrid" class="demo-grid"></div>
-    </section>
+<section id="selectedView" class="selected-view hidden">
+  <div class="selected-top">
+    <div>
+      <div class="kicker">Mosaic Prototype</div>
+      <div id="selectedQuery" class="selected-query"></div>
+    </div>
+    <button id="backBtn" class="small-btn" type="button">返回</button>
+  </div>
 
-    <section id="inputState" class="input-state hidden" aria-live="polite">
-      <div class="input-hint">輸入一位你想到的名人或角色</div>
-    </section>
-  </main>
+  <div class="compare">
+    <div class="panel">
+      <div class="panel-label">原始候選</div>
+      <img id="selectedImage" alt="">
+    </div>
+    <div class="panel">
+      <div class="panel-label">高速 Mosaic</div>
+      <canvas id="mosaicCanvas"></canvas>
+    </div>
+  </div>
 
-  <script src="config.js?v=0.3.2"></script>
-  <script src="app.js?v=0.3.2"></script>
+  <div id="selectedTiming" class="selected-timing"></div>
+  <div class="mosaic-controls">
+    <label>格數
+      <select id="tileSize">
+        <option value="7">較粗</option>
+        <option value="5" selected>標準</option>
+        <option value="3.5">較細</option>
+      </select>
+    </label>
+    <button id="regenBtn" type="button">重新生成</button>
+  </div>
+  <button id="openGalleryBtn" class="gallery-entry" type="button">開啟偽相簿 Prototype</button>
+  <div class="prototype-note">v0.7.0 開始加入偽相簿：可匯入你自己的照片、正常瀏覽、點開單張預覽、左右切換；縮小到最密層時顯示選定人物的 Mosaic。這仍是操作原型，Samsung Gallery 外觀會在流程確認後精修。</div>
+</section>
+
+
+<section id="galleryView" class="gallery-view hidden">
+  <div class="gallery-bar">
+    <button id="galleryBack" class="icon-btn" type="button">‹</button>
+    <strong>圖片</strong>
+    <div class="gallery-actions">
+      <button id="importBtn" class="icon-btn" type="button">＋</button>
+      <button id="zoomBtn" class="icon-btn" type="button">縮小</button>
+    </div>
+  </div>
+  <input id="photoPicker" type="file" accept="image/*" multiple hidden>
+  <div id="galleryHelp" class="gallery-help">＋ 可選手機真實照片。點照片可預覽；雙指縮放照片牆，或先用「縮小」按鈕測試。</div>
+  <div id="photoGrid" class="photo-grid zoom-normal"></div>
+</section>
+
+<section id="photoPreview" class="photo-preview hidden">
+  <div class="preview-bar">
+    <button id="previewBack" class="icon-btn" type="button">‹</button>
+    <div id="previewCount"></div>
+    <span></span>
+  </div>
+  <button id="prevPhoto" class="nav-photo prev" type="button">‹</button>
+  <img id="previewImage" alt="">
+  <button id="nextPhoto" class="nav-photo next" type="button">›</button>
+</section>
+
+<section id="debug" class="debug hidden"><pre id="debugText"></pre></section>
+</main>
+<script src="config.js?v=0.7.0"></script>
+<script src="app.js?v=0.7.0"></script>
 </body>
 </html>
