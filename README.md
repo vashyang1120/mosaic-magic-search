@@ -1,18 +1,33 @@
-# Mosaic Magic — Spectator Handoff v0.3.0
+# Mosaic Magic — Spectator Demo Fullscreen Handoff v0.3.1
 
-這一版改用極簡入口：
+## 新流程
+1. 先顯示一個固定人物的完整「已搜尋圖片」頁面，預設是「周杰倫」。
+2. 魔術師可以說：「我示範一下，像這樣搜尋一個人。」
+3. 魔術師點搜尋框的那一下，頁面嘗試呼叫 Fullscreen API，並切換成乾淨輸入狀態。
+4. 搜尋框自動清空並 focus，手機交給觀眾。
+5. 觀眾輸入人物／角色名稱並送出。
+6. 前端把 query POST 到 Cloudflare `/capture`。
+7. 立刻 `location.replace()` 到真正 Google Images。
+8. Google 頁面接手後，觀眾後續看到與操作的都是真的 Google。
 
-1. 觀眾只在我們的頁面輸入搜尋關鍵字。
-2. 按下搜尋時，前端把 query 傳到 Cloudflare Worker `/capture`。
-3. 頁面立刻 `location.replace()` 到真正的 Google Images。
-4. 觀眾後續看到與操作的都是真正 Google。
-5. Worker `/latest` 可供之後魔術師端讀取最新 query。
-6. Worker `/images?q=...` 可用 Brave Search 取得同人物的圖片，供之後 Mosaic 使用。
+## 更新方式
+只需更新 GitHub Pages：
+- index.html
+- app.js
+- styles.css
+- config.js
+- README.md
 
-## 需要更新
-- GitHub Pages：`index.html`, `app.js`, `styles.css`, `config.js`
-- Cloudflare Worker：用 `worker/worker.js` 取代現有 Worker 程式
-- Cloudflare Secret `BRAVE_API_KEY` 保持原樣，不需重設
+Cloudflare Worker 維持 v0.3.0 即可，不用重貼。
+
+## 自訂示範人物
+可在 config.js 修改：
+- DEMO_QUERY
+- DEMO_CHIPS
+
+例如：
+DEMO_QUERY: '周杰倫'
+DEMO_CHIPS: ['演唱會','專輯','電影','近照']
 
 ## 注意
-目前 `/latest` 使用 Worker 記憶體暫存，只適合概念驗證。正式跨裝置版本下一步會改用 Durable Object / KV / D1 或其他持久化 Session 儲存，避免 Worker instance 更換後資料遺失。
+Fullscreen API 受手機瀏覽器支援限制。支援時，點搜尋框會隱藏瀏覽器 UI；不支援時會自動 fallback 成一般頁面切換，功能仍可使用。

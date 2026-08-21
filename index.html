@@ -5,12 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#ffffff" />
   <title>Google</title>
-  <link rel="stylesheet" href="styles.css?v=0.3.0" />
+  <link rel="stylesheet" href="styles.css?v=0.3.1" />
 </head>
 <body>
-  <main class="page-shell">
+  <main id="appShell" class="page-shell">
     <header class="incognito-header">
-      <button class="menu-btn" type="button" aria-label="選單">☰</button>
+      <button class="menu-btn" type="button" aria-label="選單">
+        <span></span><span></span><span></span>
+      </button>
       <div class="google-logo" aria-label="Google">
         <span class="b">G</span><span class="r">o</span><span class="y">o</span><span class="b">g</span><span class="g">l</span><span class="r">e</span>
       </div>
@@ -21,7 +23,7 @@
       <span class="search-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M10.5 4a6.5 6.5 0 1 0 4.09 11.56L20 20.97 20.97 20l-5.41-5.41A6.5 6.5 0 0 0 10.5 4Zm0 2a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9Z"/></svg>
       </span>
-      <input id="queryInput" type="search" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="搜尋圖片" />
+      <input id="queryInput" type="search" autocomplete="off" autocapitalize="none" spellcheck="false" />
       <button id="clearBtn" class="clear-btn hidden" type="button" aria-label="清除">×</button>
       <span class="mic-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24">
@@ -41,10 +43,18 @@
       <span>網頁</span>
     </nav>
 
-    <div id="status" class="status" aria-live="polite"></div>
+    <section id="demoContent" class="demo-content">
+      <div id="chips" class="chips"></div>
+      <div id="status" class="status" aria-live="polite"></div>
+      <div id="demoGrid" class="demo-grid"></div>
+    </section>
+
+    <section id="inputState" class="input-state hidden" aria-live="polite">
+      <div class="input-hint">輸入一位你想到的名人或角色</div>
+    </section>
   </main>
 
-  <script src="config.js?v=0.3.0"></script>
-  <script src="app.js?v=0.3.0"></script>
+  <script src="config.js?v=0.3.1"></script>
+  <script src="app.js?v=0.3.1"></script>
 </body>
 </html>
