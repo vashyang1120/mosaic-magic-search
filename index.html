@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>圖片搜尋</title>
-  <link rel="stylesheet" href="styles.css?v=0.2.8" />
+  <link rel="stylesheet" href="styles.css?v=0.2.9" />
 </head>
 <body>
   <header class="top-shell">
@@ -25,14 +25,14 @@
     </form>
 
     <nav class="tabs" aria-label="搜尋分類">
-      <button type="button">AI 模式</button>
-      <button type="button">全部</button>
-      <button type="button" class="active">圖片</button>
-      <button type="button">影片</button>
-      <button type="button">短片</button>
-      <button type="button">新聞</button>
-      <button type="button">購物</button>
-      <button type="button">網頁</button>
+      <button type="button" data-tab="ai">AI 模式</button>
+      <button type="button" data-tab="all">全部</button>
+      <button type="button" data-tab="images" class="active">圖片</button>
+      <button type="button" data-tab="videos">影片</button>
+      <button type="button" data-tab="shorts">短片</button>
+      <button type="button" data-tab="news">新聞</button>
+      <button type="button" data-tab="shopping">購物</button>
+      <button type="button" data-tab="web">網頁</button>
     </nav>
   </header>
 
@@ -40,6 +40,7 @@
     <div id="status" class="status"></div>
     <section id="chips" class="chips hidden" aria-label="建議搜尋"></section>
     <section id="resultsFeed" class="results-feed" aria-label="圖片搜尋結果"></section>
+    <section id="altResults" class="alt-results hidden" aria-live="polite"></section>
   </main>
 
   <dialog id="previewDialog" class="preview-dialog">
@@ -85,7 +86,7 @@
     <pre id="debugText"></pre>
   </section>
 
-  <script src="config.js?v=0.2.8"></script>
-  <script src="app.js?v=0.2.8"></script>
+  <script src="config.js?v=0.2.9"></script>
+  <script src="app.js?v=0.2.9"></script>
 </body>
 </html>

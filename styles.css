@@ -639,3 +639,271 @@ body {
   .tabs { padding-left: 18px; padding-right: 18px; }
   .chips { padding-left: 18px; padding-right: 18px; }
 }
+
+
+/* v0.2.9: closer density + functional alternate tabs */
+
+.brand-row {
+  height: 86px;
+  padding-top: 12px;
+}
+.brand-word {
+  font-size: 34px;
+  letter-spacing: -2px;
+}
+.account-dot {
+  right: 18px;
+  width: 38px;
+  height: 38px;
+}
+
+.search-row {
+  margin: 0 28px 10px;
+  min-height: 56px;
+  grid-template-columns: 30px minmax(0,1fr) 34px 38px;
+  padding: 0 10px 0 16px;
+  border-radius: 28px;
+  box-shadow: 0 1px 4px rgba(32,33,36,.20);
+}
+.search-row input {
+  font-size: 20px;
+}
+.search-btn {
+  width: 36px;
+  min-width: 36px;
+  padding: 0;
+  color: transparent;
+  position: relative;
+}
+.search-btn::before {
+  content: "🎤";
+  color: #5f6368;
+  font-size: 20px;
+  display: block;
+}
+.clear-btn {
+  font-size: 26px;
+}
+
+.tabs {
+  padding: 0 18px;
+  gap: 0;
+}
+.tabs button {
+  padding: 12px 10px 13px;
+  font-size: 16px;
+}
+.tabs button.active::after {
+  left: 9px;
+  right: 9px;
+  height: 3px;
+}
+
+.chips {
+  padding: 10px 18px 8px;
+  gap: 8px;
+}
+.chips button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 11px;
+  font-size: 14px;
+}
+.chips button::before {
+  content: "";
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  border-radius: 6px;
+  background:
+    linear-gradient(135deg, #d7dce2, #f1f3f4);
+}
+
+.results-feed {
+  column-gap: 5px;
+  padding: 4px 5px 18px;
+}
+.result-card {
+  margin-bottom: 8px;
+}
+.result-card img {
+  border-radius: 14px;
+}
+.result-title {
+  margin: 5px 6px 1px;
+  font-size: 13px;
+  line-height: 1.32;
+}
+.result-source {
+  margin: 0 6px;
+  font-size: 12px;
+}
+
+/* Alternate tab result layouts */
+.alt-results {
+  padding: 12px 18px 40px;
+  background: #fff;
+}
+.alt-header {
+  color: #5f6368;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+.web-result,
+.news-result,
+.video-result,
+.ai-card,
+.shopping-result {
+  border-bottom: 1px solid #edf0f2;
+  padding: 0 0 18px;
+  margin: 0 0 18px;
+}
+.web-site,
+.news-source,
+.video-source,
+.shopping-source {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #3c4043;
+  font-size: 13px;
+  margin-bottom: 5px;
+}
+.site-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #eef1f4;
+  display: inline-grid;
+  place-items: center;
+  font-size: 11px;
+  color: #5f6368;
+}
+.web-result h3,
+.news-result h3,
+.video-result h3,
+.shopping-result h3 {
+  margin: 2px 0 6px;
+  color: #1a0dab;
+  font-size: 18px;
+  line-height: 1.32;
+  font-weight: 400;
+}
+.web-result p,
+.news-result p,
+.video-result p,
+.shopping-result p {
+  margin: 0;
+  color: #4d5156;
+  font-size: 14px;
+  line-height: 1.45;
+}
+.ai-card {
+  padding: 16px;
+  border: 1px solid #e0e3e7;
+  border-radius: 18px;
+  background: #fff;
+}
+.ai-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.ai-card p {
+  margin: 0;
+  color: #3c4043;
+  font-size: 15px;
+  line-height: 1.55;
+}
+.video-result {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 12px;
+}
+.video-thumb,
+.short-card img,
+.news-thumb,
+.shopping-thumb {
+  width: 100%;
+  border-radius: 12px;
+  object-fit: cover;
+  background: #f1f3f4;
+}
+.video-thumb {
+  height: 96px;
+}
+.shorts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 10px;
+}
+.short-card {
+  min-width: 0;
+}
+.short-card img {
+  aspect-ratio: 9 / 16;
+}
+.short-card div {
+  margin-top: 5px;
+  color: #3c4043;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.news-result {
+  display: grid;
+  grid-template-columns: 1fr 112px;
+  gap: 12px;
+}
+.news-thumb {
+  height: 88px;
+}
+.shopping-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 12px;
+}
+.shopping-result {
+  border: 0;
+}
+.shopping-thumb {
+  aspect-ratio: 1 / 1;
+}
+.price {
+  margin-top: 5px;
+  font-weight: 600;
+  color: #202124;
+}
+
+/* Preview closer to Google proportions */
+.preview-header {
+  min-height: 62px;
+  padding: 8px 16px;
+}
+.source-favicon {
+  width: 36px;
+  height: 36px;
+}
+.preview-meta {
+  padding: 14px 18px 12px;
+}
+.preview-title-row h2 {
+  font-size: 18px;
+}
+.visit-btn {
+  padding: 11px 18px;
+  font-size: 15px;
+}
+.preview-bottom-actions button {
+  padding: 12px;
+  font-size: 16px;
+}
+
+@media (max-width: 420px) {
+  .brand-row { height: 82px; }
+  .brand-word { font-size: 33px; }
+  .search-row { margin-left: 18px; margin-right: 18px; }
+  .tabs { padding-left: 8px; padding-right: 8px; }
+  .chips { padding-left: 12px; padding-right: 12px; }
+  .alt-results { padding-left: 14px; padding-right: 14px; }
+}
