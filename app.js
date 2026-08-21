@@ -1,5 +1,7 @@
 
-const API_BASE = (window.MOSAIC_CONFIG && window.MOSAIC_CONFIG.apiBase) || '';
+const cfg = window.MOSAIC_MAGIC_CONFIG || {};
+const API_BASE = String(cfg.SEARCH_API_URL || '').replace(/\/$/, '');
+const RESULT_COUNT = Number(cfg.RESULT_COUNT || 50);
 const debugMode = new URLSearchParams(location.search).get('debug') === '1';
 
 const searchForm = document.getElementById('searchForm');
@@ -54,10 +56,33 @@ function normalizeResult(item, index) {
 }
 
 async function fetchImages(query) {
-  const res = await fetch(`${API_BASE}/images?q=${encodeURIComponent(query)}`);
-  const data = await res.json();
-  if (!res.ok || !data.ok) throw new Error(data.error || 'Search failed');
-  return (data.results || []).map(normalizeResult);
+  if (!API_BASE) {
+    throw new Error('SEARCH_API_URL_NOT_CONFIGURED');
+  }
+
+  const url = new URL(`${API_BASE}/images`);
+  url.searchParams.set('q', query);
+  url.searchParams.set('count', String(RESULT_COUNT));
+
+  const res = await fetch(url.toString(), {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+  });
+
+  let data = null;
+  try {
+    data = await res.json();
+  } catch (_) {
+    throw new Error(`INVALID_JSON_${res.status}`);
+  }
+
+  if (!res.ok || !data?.ok) {
+    throw new Error(data?.error || `HTTP_${res.status}`);
+  }
+
+  return Array.isArray(data.results)
+    ? data.results.map(normalizeResult).filter(x => x.thumbnail || x.imageUrl)
+    : [];
 }
 
 function makeCard(item) {
@@ -228,8 +253,14 @@ async function runSearch(query) {
     renderFeed();
     setStatus(results.length ? '' : '找不到圖片，請換一個關鍵字再試一次。', results.length ? '' : 'error');
   } catch (err) {
-    console.error(err);
-    setStatus('搜尋服務暫時無法使用，請稍後再試。', 'error');
+    console.error('[Mosaic Magic search error]', err);
+    if (debugMode) {
+      setStatus(`搜尋失敗：${err.message}`, 'error');
+    } else if (err.message === 'SEARCH_API_URL_NOT_CONFIGURED') {
+      setStatus('搜尋服務尚未連線。', 'error');
+    } else {
+      setStatus('搜尋服務暫時無法使用，請稍後再試。', 'error');
+    }
   }
 }
 
