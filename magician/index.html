@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111111">
 <title>Mosaic Gallery</title>
-<link rel="stylesheet" href="styles.css?v=0.6.0">
+<link rel="stylesheet" href="styles.css?v=0.7.0">
 </head>
 <body>
 <main class="app">
@@ -54,19 +54,46 @@
   <div class="mosaic-controls">
     <label>格數
       <select id="tileSize">
-        <option value="10">較粗</option>
-        <option value="7" selected>標準</option>
-        <option value="5">較細</option>
+        <option value="7">較粗</option>
+        <option value="5" selected>標準</option>
+        <option value="3.5">較細</option>
       </select>
     </label>
     <button id="regenBtn" type="button">重新生成</button>
   </div>
-  <div class="prototype-note">這一版先測「人物辨識度 + 生成速度」。還不是正式偽相簿；下一階段才把結果接進可滑動、可縮放的相簿。</div>
+  <button id="openGalleryBtn" class="gallery-entry" type="button">開啟偽相簿 Prototype</button>
+  <div class="prototype-note">v0.7.0 開始加入偽相簿：可匯入你自己的照片、正常瀏覽、點開單張預覽、左右切換；縮小到最密層時顯示選定人物的 Mosaic。這仍是操作原型，Samsung Gallery 外觀會在流程確認後精修。</div>
+</section>
+
+
+<section id="galleryView" class="gallery-view hidden">
+  <div class="gallery-bar">
+    <button id="galleryBack" class="icon-btn" type="button">‹</button>
+    <strong>圖片</strong>
+    <div class="gallery-actions">
+      <button id="importBtn" class="icon-btn" type="button">＋</button>
+      <button id="zoomBtn" class="icon-btn" type="button">縮小</button>
+    </div>
+  </div>
+  <input id="photoPicker" type="file" accept="image/*" multiple hidden>
+  <div id="galleryHelp" class="gallery-help">＋ 可選手機真實照片。點照片可預覽；雙指縮放照片牆，或先用「縮小」按鈕測試。</div>
+  <div id="photoGrid" class="photo-grid zoom-normal"></div>
+</section>
+
+<section id="photoPreview" class="photo-preview hidden">
+  <div class="preview-bar">
+    <button id="previewBack" class="icon-btn" type="button">‹</button>
+    <div id="previewCount"></div>
+    <span></span>
+  </div>
+  <button id="prevPhoto" class="nav-photo prev" type="button">‹</button>
+  <img id="previewImage" alt="">
+  <button id="nextPhoto" class="nav-photo next" type="button">›</button>
 </section>
 
 <section id="debug" class="debug hidden"><pre id="debugText"></pre></section>
 </main>
-<script src="config.js?v=0.6.0"></script>
-<script src="app.js?v=0.6.0"></script>
+<script src="config.js?v=0.7.0"></script>
+<script src="app.js?v=0.7.0"></script>
 </body>
 </html>

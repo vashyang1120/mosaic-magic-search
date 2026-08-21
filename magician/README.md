@@ -1,19 +1,25 @@
-# Mosaic Magic Magician v0.6.0 — Mosaic Prototype
+# Mosaic Magic Magician v0.7.0 — Gallery Prototype
 
-基準：v0.5.0-speed-test（已實機確認 4/4 Ready 0.89s）
+本版基於 v0.6.0。
 
-本版只推進下一個核心驗證：
-- 保留既有 `/latest` → `/images` → Brave 4 張候選流程
-- 每張候選圖片 Ready 後，背景立即建立高速 Mosaic 測試圖
-- 顯示 4 張圖片 Ready 時間與 4 張 Mosaic Ready 時間
-- 點任一候選可比較「原始候選 / 高速 Mosaic」
-- 可切換較粗 / 標準 / 較細格數，測人物辨識度
-- 不修改 Spectator
-- 不修改 Cloudflare Worker / Durable Object
-- 尚未加入正式偽相簿、真實生活照、單張預覽、pinch zoom、Google emergency
+## 格數調整
+- 新「較粗」 = v0.6.0 的「標準」
+- 新「標準」 = v0.6.0 的「較細」，並設為預設
+- 新「較細」 = 再提高一級
 
-測試重點：
-1. 4/4 圖片 Ready 是否仍接近原本速度
-2. 4/4 Mosaic Ready 總時間
-3. 哪種格數最容易辨識人物
-4. 候選 1~4 中，適合 Mosaic 的照片是否能一眼辨認
+## 偽相簿第一階段
+- 選定 Brave 候選後，可進「偽相簿 Prototype」
+- 「＋」可從手機選擇多張真實照片
+- 正常照片牆 3 欄
+- 可點開單張照片大圖預覽
+- 預覽可左右按鍵/滑動切換
+- 相簿有 3 → 5 → 9 欄密度層
+- 最密層切到選定人物的 Mosaic
+- 先提供「縮小」按鈕方便桌面測試，也加入手機 pinch prototype
+
+## 尚未做
+- Samsung Gallery 1:1 視覺精修
+- 真實照片的持久保存（目前重新整理頁面後需重選）
+- 影片縮圖/時間標示
+- 更自然的多階段 pinch 動畫
+- Google Emergency

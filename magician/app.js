@@ -100,7 +100,7 @@ function prebuild(item,img){
   // Let the browser paint Ready first, then use the next frame for mosaic work.
   requestAnimationFrame(()=>{
     const c=document.createElement('canvas');
-    const res=buildMosaicFromImage(img,c,7);
+    const res=buildMosaicFromImage(img,c,5);
     item.mosaicBusy=false;
     item.mosaicResult=res;
     if(res.ok){
@@ -274,3 +274,142 @@ tileSize.onchange=regenBtn.onclick;
 mode('waiting');
 poll();
 setInterval(poll,POLL);
+
+
+// ===== v0.7.0 Gallery Prototype =====
+const galleryView=document.getElementById('galleryView');
+const photoPreview=document.getElementById('photoPreview');
+const openGalleryBtn=document.getElementById('openGalleryBtn');
+const galleryBack=document.getElementById('galleryBack');
+const importBtn=document.getElementById('importBtn');
+const zoomBtn=document.getElementById('zoomBtn');
+const photoPicker=document.getElementById('photoPicker');
+const photoGrid=document.getElementById('photoGrid');
+const galleryHelp=document.getElementById('galleryHelp');
+const previewBack=document.getElementById('previewBack');
+const previewImage=document.getElementById('previewImage');
+const previewCount=document.getElementById('previewCount');
+const prevPhoto=document.getElementById('prevPhoto');
+const nextPhoto=document.getElementById('nextPhoto');
+
+const galleryState={photos:[],zoom:0,previewIndex:0,pinchStart:0};
+const galleryModes=['zoom-normal','zoom-mid','zoom-small','zoom-mosaic'];
+
+function mainMode(el){
+  [waiting,candidateView,selectedView,galleryView,photoPreview].forEach(x=>x.classList.add('hidden'));
+  el.classList.remove('hidden');
+}
+
+function renderGallery(){
+  photoGrid.className='photo-grid '+galleryModes[galleryState.zoom];
+  photoGrid.innerHTML='';
+  const photos=galleryState.photos;
+  photos.forEach((src,i)=>{
+    const b=document.createElement('button');
+    b.type='button'; b.className='gallery-photo';
+    const im=document.createElement('img'); im.src=src; im.alt='';
+    b.appendChild(im);
+    b.onclick=()=>openPreview(i);
+    photoGrid.appendChild(b);
+  });
+
+  // Fill a few rows visually when the user has only selected a small number of photos.
+  if(photos.length && galleryState.zoom<3){
+    const target=galleryState.zoom===0?30:galleryState.zoom===1?55:90;
+    for(let i=photos.length;i<target;i++){
+      const b=document.createElement('button');
+      b.type='button'; b.className='gallery-photo clone';
+      const im=document.createElement('img'); im.src=photos[i%photos.length]; im.alt='';
+      b.appendChild(im);
+      b.onclick=()=>openPreview(i%photos.length);
+      photoGrid.appendChild(b);
+    }
+  }
+
+  if(galleryState.zoom===3){
+    photoGrid.innerHTML='';
+    const c=document.createElement('canvas');
+    c.className='gallery-mosaic';
+    photoGrid.appendChild(c);
+    const item=state.candidates[state.selectedIndex];
+    if(item && selectedImage.complete && selectedImage.naturalWidth){
+      buildMosaicFromImage(selectedImage,c,3.5);
+    }else if(item?.mosaicData){
+      const im=new Image(); im.onload=()=>{
+        c.width=im.width;c.height=im.height;c.getContext('2d').drawImage(im,0,0);
+      }; im.src=item.mosaicData;
+    }
+  }
+
+  galleryHelp.classList.toggle('hidden',photos.length>0);
+  zoomBtn.textContent=galleryState.zoom<3?'縮小':'放大';
+}
+
+function cycleZoom(){
+  galleryState.zoom = galleryState.zoom<3 ? galleryState.zoom+1 : 0;
+  renderGallery();
+}
+
+photoPicker.onchange=()=>{
+  galleryState.photos.forEach(u=>{if(u.startsWith('blob:'))URL.revokeObjectURL(u)});
+  galleryState.photos=[...photoPicker.files].map(f=>URL.createObjectURL(f));
+  galleryState.zoom=0;
+  renderGallery();
+};
+importBtn.onclick=()=>photoPicker.click();
+zoomBtn.onclick=cycleZoom;
+openGalleryBtn.onclick=()=>{galleryState.zoom=0;renderGallery();mainMode(galleryView)};
+galleryBack.onclick=()=>mainMode(selectedView);
+
+function openPreview(i){
+  if(!galleryState.photos.length)return;
+  galleryState.previewIndex=i;
+  updatePreview();
+  mainMode(photoPreview);
+}
+function updatePreview(){
+  const n=galleryState.photos.length;
+  if(!n)return;
+  galleryState.previewIndex=(galleryState.previewIndex+n)%n;
+  previewImage.src=galleryState.photos[galleryState.previewIndex];
+  previewCount.textContent=`${galleryState.previewIndex+1} / ${n}`;
+}
+previewBack.onclick=()=>mainMode(galleryView);
+prevPhoto.onclick=()=>{galleryState.previewIndex--;updatePreview()};
+nextPhoto.onclick=()=>{galleryState.previewIndex++;updatePreview()};
+
+// Swipe single-photo preview
+let swipeX=0;
+previewImage.addEventListener('touchstart',e=>{if(e.touches.length===1)swipeX=e.touches[0].clientX},{passive:true});
+previewImage.addEventListener('touchend',e=>{
+  const x=e.changedTouches[0]?.clientX??swipeX, d=x-swipeX;
+  if(Math.abs(d)>45){galleryState.previewIndex+=d<0?1:-1;updatePreview()}
+},{passive:true});
+
+// Pinch gesture on gallery: one pinch step changes one density level.
+photoGrid.addEventListener('touchstart',e=>{
+  if(e.touches.length===2){
+    const a=e.touches[0],b=e.touches[1];
+    galleryState.pinchStart=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
+  }
+},{passive:true});
+photoGrid.addEventListener('touchend',e=>{
+  if(galleryState.pinchStart && e.touches.length<2){
+    // touchend no longer exposes both points reliably; use gesture direction from last move.
+    galleryState.pinchStart=0;
+  }
+},{passive:true});
+let pinchLast=0;
+photoGrid.addEventListener('touchmove',e=>{
+  if(e.touches.length!==2)return;
+  const a=e.touches[0],b=e.touches[1];
+  const d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
+  if(!pinchLast)pinchLast=d;
+  const delta=d-pinchLast;
+  if(Math.abs(delta)>34){
+    if(delta<0 && galleryState.zoom<3)galleryState.zoom++;
+    if(delta>0 && galleryState.zoom>0)galleryState.zoom--;
+    pinchLast=d; renderGallery();
+  }
+},{passive:true});
+photoGrid.addEventListener('touchend',()=>{pinchLast=0},{passive:true});
