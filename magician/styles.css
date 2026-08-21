@@ -9,3 +9,15 @@
 .badge{position:absolute;top:8px;left:8px;width:25px;height:25px;border-radius:50%;display:grid;place-items:center;background:rgba(0,0,0,.72);font-weight:800;font-size:12px}
 .selected-view{padding:18px 14px 28px}.selected-view img{width:100%;max-height:68dvh;object-fit:contain;background:#222;border-radius:18px}.selected-query{font-size:27px;font-weight:800;margin-top:12px}.selected-timing{font-size:12px;color:#8bea8b;margin-top:5px}.selected-view button{width:100%;height:48px;margin-top:14px;border:0;border-radius:14px;background:#282828;color:#fff;font-weight:700}
 .debug{position:fixed;left:8px;right:8px;bottom:8px;z-index:99;background:rgba(0,0,0,.94);color:#8bea8b;border-radius:10px;padding:8px;max-height:40vh;overflow:auto;font:11px monospace}.debug pre{margin:0;white-space:pre-wrap;word-break:break-all}.hidden{display:none!important}
+
+.mosaic-status{margin-top:4px;font-size:10px;color:#888}.mosaic-status.ready{color:#8bd1ff}.mosaic-status.loading{color:#ffd479}.mosaic-status.error{color:#ff8d8d}
+.selected-top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:12px}
+.small-btn{width:auto!important;height:38px!important;margin:0!important;padding:0 16px}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
+.panel{min-width:0}.panel-label{font-size:11px;color:#aaa;margin:0 0 6px 2px}
+.compare img,.compare canvas{display:block;width:100%;height:auto;max-height:58dvh;object-fit:contain;background:#222;border-radius:12px}
+.mosaic-controls{display:flex;gap:10px;align-items:center;margin-top:12px}.mosaic-controls label{display:flex;gap:8px;align-items:center;color:#bbb;font-size:12px}
+.mosaic-controls select{background:#222;color:#fff;border:1px solid #444;border-radius:10px;padding:8px}
+.mosaic-controls button{height:38px!important;margin:0!important;flex:1}
+.prototype-note{margin-top:12px;padding:11px 12px;border-radius:12px;background:#1b1b1b;color:#999;font-size:11px;line-height:1.5}
+@media(max-width:480px){.selected-view{padding:14px 10px 24px}.selected-query{font-size:22px}}

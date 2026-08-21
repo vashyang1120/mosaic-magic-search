@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#111111">
 <title>Mosaic Gallery</title>
-<link rel="stylesheet" href="styles.css?v=0.5.0">
+<link rel="stylesheet" href="styles.css?v=0.6.0">
 </head>
 <body>
 <main class="app">
@@ -26,21 +26,47 @@
     </div>
     <div id="totalTime" class="total-time"></div>
   </div>
-  <div class="hint">4 張候選圖會同時預載；圖片完成載入即標記 Ready。點圖可立即選定。</div>
+  <div class="hint">4 張 Brave 候選照同步預載。這版會在每張圖 Ready 後，立即於背景建立「高速 Mosaic 測試圖」。</div>
   <div id="candidateGrid" class="candidate-grid"></div>
 </section>
 
 <section id="selectedView" class="selected-view hidden">
-  <div class="kicker">已選定目標</div>
-  <img id="selectedImage" alt="">
-  <div id="selectedQuery" class="selected-query"></div>
+  <div class="selected-top">
+    <div>
+      <div class="kicker">Mosaic Prototype</div>
+      <div id="selectedQuery" class="selected-query"></div>
+    </div>
+    <button id="backBtn" class="small-btn" type="button">返回</button>
+  </div>
+
+  <div class="compare">
+    <div class="panel">
+      <div class="panel-label">原始候選</div>
+      <img id="selectedImage" alt="">
+    </div>
+    <div class="panel">
+      <div class="panel-label">高速 Mosaic</div>
+      <canvas id="mosaicCanvas"></canvas>
+    </div>
+  </div>
+
   <div id="selectedTiming" class="selected-timing"></div>
-  <button id="backBtn" type="button">返回候選圖</button>
+  <div class="mosaic-controls">
+    <label>格數
+      <select id="tileSize">
+        <option value="10">較粗</option>
+        <option value="7" selected>標準</option>
+        <option value="5">較細</option>
+      </select>
+    </label>
+    <button id="regenBtn" type="button">重新生成</button>
+  </div>
+  <div class="prototype-note">這一版先測「人物辨識度 + 生成速度」。還不是正式偽相簿；下一階段才把結果接進可滑動、可縮放的相簿。</div>
 </section>
 
 <section id="debug" class="debug hidden"><pre id="debugText"></pre></section>
 </main>
-<script src="config.js?v=0.5.0"></script>
-<script src="app.js?v=0.5.0"></script>
+<script src="config.js?v=0.6.0"></script>
+<script src="app.js?v=0.6.0"></script>
 </body>
 </html>

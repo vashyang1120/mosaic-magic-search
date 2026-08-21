@@ -1,21 +1,19 @@
-# Mosaic Magic — Magician v0.5.0 Speed Test
+# Mosaic Magic Magician v0.6.0 — Mosaic Prototype
 
-這版只測「正式 Mosaic 前的準備時間」，不改已經成功的 Spectator / Durable Object 傳輸鏈。
+基準：v0.5.0-speed-test（已實機確認 4/4 Ready 0.89s）
 
-## 功能
-- 收到新 query 後一次抓 4 張候選人物圖。
-- 4 張圖片平行預載。
-- 每張顯示從「Magician 收到 query」到圖片 Ready 的秒數。
-- 顯示 4/4 Ready 的總時間。
-- 點任一候選圖立即進入選定畫面。
+本版只推進下一個核心驗證：
+- 保留既有 `/latest` → `/images` → Brave 4 張候選流程
+- 每張候選圖片 Ready 後，背景立即建立高速 Mosaic 測試圖
+- 顯示 4 張圖片 Ready 時間與 4 張 Mosaic Ready 時間
+- 點任一候選可比較「原始候選 / 高速 Mosaic」
+- 可切換較粗 / 標準 / 較細格數，測人物辨識度
+- 不修改 Spectator
+- 不修改 Cloudflare Worker / Durable Object
+- 尚未加入正式偽相簿、真實生活照、單張預覽、pinch zoom、Google emergency
 
-## 重要
-這版還沒有生成正式 Mosaic。
-原因是正式 Mosaic 的真實速度高度取決於「你之後放進偽相簿的真實照片素材池」。
-如果現在用假素材測 Mosaic，會得到誤導性的速度數字。
-
-下一階段會加入：
-- 你自行選擇的手機真實照片素材池
-- 前 3～5 列偽相簿真實照片
-- 每張素材預先分析平均色 / 亮度 / 縮圖
-- 4 個候選目標的 Mosaic 背景預生成
+測試重點：
+1. 4/4 圖片 Ready 是否仍接近原本速度
+2. 4/4 Mosaic Ready 總時間
+3. 哪種格數最容易辨識人物
+4. 候選 1~4 中，適合 Mosaic 的照片是否能一眼辨認
