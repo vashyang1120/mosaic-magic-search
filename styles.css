@@ -342,3 +342,30 @@ button, input { font: inherit; }
 @media (min-width: 720px) {
   .results-feed { column-count: 3; }
 }
+
+
+/* v0.2.7 mobile stability fixes */
+.search-row {
+  grid-template-columns: 34px minmax(0, 1fr) 34px max-content;
+}
+.search-btn {
+  min-width: 82px;
+  white-space: nowrap;
+  writing-mode: horizontal-tb;
+  word-break: keep-all;
+}
+.preview-dialog {
+  overscroll-behavior: contain;
+}
+.preview-image-wrap {
+  overflow: hidden;
+}
+.preview-image-wrap img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Never render the dev panel unless debug mode explicitly enables it */
+.debug-panel.hidden {
+  display: none !important;
+}

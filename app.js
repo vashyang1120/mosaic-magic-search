@@ -27,6 +27,8 @@ const state = {
   query: '',
   results: [],
   currentTarget: null,
+  previewOpen: false,
+  previewHistoryPushed: false,
 };
 
 function setStatus(text = '', kind = '') {
@@ -209,7 +211,7 @@ function renderRelatedPreview(currentItem) {
   });
 }
 
-function openPreview(item) {
+function openPreview(item, { pushHistory = true } = {}) {
   recordTarget(item);
 
   sourceName.textContent = item.source || hostFromUrl(item.pageUrl) || '來源網站';
@@ -218,22 +220,45 @@ function openPreview(item) {
   previewSourceText.textContent = item.source || hostFromUrl(item.pageUrl);
   visitBtn.href = item.pageUrl || item.imageUrl || '#';
 
+  // Prefer the Brave thumbnail in Preview for mobile stability.
+  // The exact original image URL is still preserved in currentTarget for Mosaic use.
   previewImage.onerror = () => {
-    if (previewImage.src !== item.thumbnail && item.thumbnail) {
+    if (item.thumbnail && previewImage.src !== item.thumbnail) {
       previewImage.src = item.thumbnail;
     }
   };
-  previewImage.src = item.imageUrl || item.thumbnail;
+  previewImage.src = item.thumbnail || item.imageUrl;
 
   renderRelatedPreview(item);
 
-  if (typeof dialog.showModal === 'function') dialog.showModal();
-  else dialog.setAttribute('open', '');
+  if (!dialog.open) {
+    if (typeof dialog.showModal === 'function') dialog.showModal();
+    else dialog.setAttribute('open', '');
+  }
+
+  state.previewOpen = true;
+
+  // Make Android/iPhone browser Back behave like Google Images:
+  // first Back closes the Preview instead of leaving the search page.
+  if (pushHistory && !state.previewHistoryPushed) {
+    history.pushState({ mosaicPreview: true }, '', location.href);
+    state.previewHistoryPushed = true;
+  }
 }
 
-function closePreview() {
+function closePreview({ fromPopState = false } = {}) {
+  if (!state.previewOpen) return;
+
   if (dialog.open && typeof dialog.close === 'function') dialog.close();
   else dialog.removeAttribute('open');
+
+  state.previewOpen = false;
+  previewImage.removeAttribute('src');
+
+  if (!fromPopState && state.previewHistoryPushed) {
+    state.previewHistoryPushed = false;
+    history.back();
+  }
 }
 
 async function runSearch(query) {
@@ -289,6 +314,13 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closePreview();
 });
 
+window.addEventListener('popstate', () => {
+  if (state.previewOpen) {
+    state.previewHistoryPushed = false;
+    closePreview({ fromPopState: true });
+  }
+});
+
 if (debugMode) {
   try {
     const saved = JSON.parse(localStorage.getItem('mosaicMagicLastSelection') || 'null');
@@ -297,4 +329,10 @@ if (debugMode) {
       updateDebug();
     }
   } catch {}
+}
+
+
+if (!debugMode) {
+  debugPanel.classList.add('hidden');
+  debugText.textContent = '';
 }
