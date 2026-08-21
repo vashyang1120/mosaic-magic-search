@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111111">
+<title>Mosaic Gallery</title>
+<link rel="stylesheet" href="styles.css?v=0.4.0">
+</head>
+<body>
+<main class="app">
+<header class="topbar"><strong>相簿</strong><span>•••</span></header>
+
+<section id="waiting" class="waiting">
+  <div class="spinner">◌</div>
+  <h1>等待新的搜尋</h1>
+  <p>保持這個頁面開啟即可。</p>
+  <small id="conn">連線中…</small>
+</section>
+
+<section id="cue" class="cue hidden">
+  <div class="kicker">最新目標</div>
+  <article class="card">
+    <img id="cueImg" alt="">
+    <div class="copy">
+      <div id="cueQuery" class="query"></div>
+      <div id="cueSource" class="source"></div>
+    </div>
+  </article>
+  <div class="actions">
+    <button id="hideBtn">隱藏提示</button>
+    <button id="refreshBtn">重新抓圖</button>
+  </div>
+</section>
+
+<section id="stealth" class="stealth hidden">
+  <div class="gallery">
+    <div>🎈</div><div>🎪</div><div>✨</div>
+    <div>🎉</div><div>🎈</div><div>🎩</div>
+    <div>🎂</div><div>🎈</div><div>📸</div>
+  </div>
+  <button id="showBtn" class="showBtn">顯示提示</button>
+</section>
+
+<section id="debug" class="debug hidden"><pre id="debugText"></pre></section>
+</main>
+<script src="config.js?v=0.4.0"></script>
+<script src="app.js?v=0.4.0"></script>
+</body>
+</html>
