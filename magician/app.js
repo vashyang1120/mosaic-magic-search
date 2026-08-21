@@ -275,8 +275,7 @@ mode('waiting');
 poll();
 setInterval(poll,POLL);
 
-
-// ===== v0.7.0 Gallery Prototype =====
+// ===== v0.8.0 Continuous Mosaic Gallery =====
 const galleryView=document.getElementById('galleryView');
 const photoPreview=document.getElementById('photoPreview');
 const openGalleryBtn=document.getElementById('openGalleryBtn');
@@ -292,124 +291,144 @@ const previewCount=document.getElementById('previewCount');
 const prevPhoto=document.getElementById('prevPhoto');
 const nextPhoto=document.getElementById('nextPhoto');
 
-const galleryState={photos:[],zoom:0,previewIndex:0,pinchStart:0};
-const galleryModes=['zoom-normal','zoom-mid','zoom-small','zoom-mosaic'];
+const G={photos:[], previewIndex:0, scale:1, minScale:.115, maxScale:1, lastDist:0, anchorX:.5, anchorY:.18};
+let mosaicBitmap=null, mosaicTiles=[], renderRAF=0;
+const TILE_COLS=42, TILE_ROWS=58, REAL_ROWS=4;
 
 function mainMode(el){
   [waiting,candidateView,selectedView,galleryView,photoPreview].forEach(x=>x.classList.add('hidden'));
   el.classList.remove('hidden');
 }
-
-function renderGallery(){
-  photoGrid.className='photo-grid '+galleryModes[galleryState.zoom];
-  photoGrid.innerHTML='';
-  const photos=galleryState.photos;
-  photos.forEach((src,i)=>{
-    const b=document.createElement('button');
-    b.type='button'; b.className='gallery-photo';
-    const im=document.createElement('img'); im.src=src; im.alt='';
-    b.appendChild(im);
-    b.onclick=()=>openPreview(i);
-    photoGrid.appendChild(b);
-  });
-
-  // Fill a few rows visually when the user has only selected a small number of photos.
-  if(photos.length && galleryState.zoom<3){
-    const target=galleryState.zoom===0?30:galleryState.zoom===1?55:90;
-    for(let i=photos.length;i<target;i++){
-      const b=document.createElement('button');
-      b.type='button'; b.className='gallery-photo clone';
-      const im=document.createElement('img'); im.src=photos[i%photos.length]; im.alt='';
-      b.appendChild(im);
-      b.onclick=()=>openPreview(i%photos.length);
-      photoGrid.appendChild(b);
-    }
+function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+function targetCandidate(){
+  return state.candidates?.[state.selectedIndex] || null;
+}
+async function prepareMosaic(){
+  const item=targetCandidate();
+  if(!item)return;
+  const src=item.imageUrl || item.thumbnail;
+  if(!src)return;
+  const im=new Image(); im.crossOrigin="anonymous";
+  await new Promise((resolve,reject)=>{im.onload=resolve;im.onerror=reject;im.src=src});
+  const sample=document.createElement('canvas');
+  sample.width=TILE_COLS; sample.height=TILE_ROWS;
+  const sx=sample.getContext('2d',{willReadFrequently:true});
+  sx.drawImage(im,0,0,TILE_COLS,TILE_ROWS);
+  const data=sx.getImageData(0,0,TILE_COLS,TILE_ROWS).data;
+  mosaicTiles=[];
+  for(let i=0;i<TILE_COLS*TILE_ROWS;i++){
+    const p=i*4;
+    mosaicTiles.push([data[p],data[p+1],data[p+2]]);
   }
-
-  if(galleryState.zoom===3){
-    photoGrid.innerHTML='';
-    const c=document.createElement('canvas');
-    c.className='gallery-mosaic';
-    photoGrid.appendChild(c);
-    const item=state.candidates[state.selectedIndex];
-    if(item && selectedImage.complete && selectedImage.naturalWidth){
-      buildMosaicFromImage(selectedImage,c,3.5);
-    }else if(item?.mosaicData){
-      const im=new Image(); im.onload=()=>{
-        c.width=im.width;c.height=im.height;c.getContext('2d').drawImage(im,0,0);
-      }; im.src=item.mosaicData;
-    }
-  }
-
-  galleryHelp.classList.toggle('hidden',photos.length>0);
-  zoomBtn.textContent=galleryState.zoom<3?'縮小':'放大';
+  mosaicBitmap=im;
 }
 
-function cycleZoom(){
-  galleryState.zoom = galleryState.zoom<3 ? galleryState.zoom+1 : 0;
-  renderGallery();
+function buildGallery(){
+  photoGrid.innerHTML='';
+  photoGrid.className='continuous-gallery';
+  const stage=document.createElement('div'); stage.id='galleryStage'; stage.className='gallery-stage';
+  const real=document.createElement('div'); real.className='real-strip';
+  G.photos.forEach((src,i)=>{
+    const b=document.createElement('button'); b.className='real-photo'; b.type='button';
+    const im=document.createElement('img'); im.src=src; im.alt='';
+    b.appendChild(im); b.onclick=()=>openPreview(i); real.appendChild(b);
+  });
+  stage.appendChild(real);
+
+  const canvas=document.createElement('canvas'); canvas.id='mosaicPlane'; canvas.className='mosaic-plane';
+  stage.appendChild(canvas);
+  photoGrid.appendChild(stage);
+  renderMosaicPlane();
+  applyScale(false);
+  galleryHelp.classList.toggle('hidden',G.photos.length>0);
+}
+
+function renderMosaicPlane(){
+  const c=document.getElementById('mosaicPlane'); if(!c)return;
+  const dpr=Math.min(devicePixelRatio||1,1.5);
+  const tile=18, w=TILE_COLS*tile, h=TILE_ROWS*tile;
+  c.width=w*dpr;c.height=h*dpr;c.style.width=w+'px';c.style.height=h+'px';
+  const x=c.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);
+
+  // Each cell is a real-looking micro thumbnail with target-colour overlay.
+  for(let r=0;r<TILE_ROWS;r++)for(let col=0;col<TILE_COLS;col++){
+    const i=r*TILE_COLS+col, rgb=mosaicTiles[i]||[70,70,70];
+    const px=col*tile,py=r*tile;
+    // varied photo-like base; no repeated user photos
+    const variant=(i*37+r*13)%7;
+    x.fillStyle=`rgb(${clamp(rgb[0]+(variant-3)*5,0,255)},${clamp(rgb[1]+((variant*3)%7-3)*4,0,255)},${clamp(rgb[2]+((variant*5)%7-3)*4,0,255)})`;
+    x.fillRect(px,py,tile-1,tile-1);
+    // subtle internal shapes make nearby cells read as individual thumbnails at medium scale
+    x.globalAlpha=.16;
+    x.fillStyle=variant%2?'white':'black';
+    if(variant%3===0)x.fillRect(px+2,py+2,tile-5,Math.max(2,tile*.28));
+    else {x.beginPath();x.arc(px+tile*.55,py+tile*.43,tile*.23,0,Math.PI*2);x.fill();}
+    x.globalAlpha=1;
+  }
+}
+
+function applyScale(animate=true){
+  const stage=document.getElementById('galleryStage'); if(!stage)return;
+  stage.style.transition=animate?'transform 110ms linear':'none';
+  stage.style.transform=`scale(${G.scale})`;
+  // compensate layout height so page scroll remains usable while zooming
+  photoGrid.style.height=(stage.scrollHeight*G.scale)+'px';
+  zoomBtn.textContent=G.scale>.23?'縮小':'放大';
+}
+function setScale(v,animate=false){
+  G.scale=clamp(v,G.minScale,G.maxScale); applyScale(animate);
 }
 
 photoPicker.onchange=()=>{
-  galleryState.photos.forEach(u=>{if(u.startsWith('blob:'))URL.revokeObjectURL(u)});
-  galleryState.photos=[...photoPicker.files].map(f=>URL.createObjectURL(f));
-  galleryState.zoom=0;
-  renderGallery();
+  G.photos.forEach(u=>{if(u.startsWith('blob:'))URL.revokeObjectURL(u)});
+  G.photos=[...photoPicker.files].map(f=>URL.createObjectURL(f));
+  G.scale=1;buildGallery();
 };
 importBtn.onclick=()=>photoPicker.click();
-zoomBtn.onclick=cycleZoom;
-openGalleryBtn.onclick=()=>{galleryState.zoom=0;renderGallery();mainMode(galleryView)};
+zoomBtn.onclick=()=>setScale(G.scale>.23?Math.max(G.minScale,G.scale*.58):Math.min(1,G.scale*1.72),true);
+openGalleryBtn.onclick=async()=>{
+  try{await prepareMosaic()}catch(e){console.warn(e)}
+  G.scale=1;buildGallery();mainMode(galleryView);
+};
 galleryBack.onclick=()=>mainMode(selectedView);
 
 function openPreview(i){
-  if(!galleryState.photos.length)return;
-  galleryState.previewIndex=i;
-  updatePreview();
-  mainMode(photoPreview);
+  if(!G.photos.length)return;
+  G.previewIndex=i;updatePreview();mainMode(photoPreview);
 }
 function updatePreview(){
-  const n=galleryState.photos.length;
-  if(!n)return;
-  galleryState.previewIndex=(galleryState.previewIndex+n)%n;
-  previewImage.src=galleryState.photos[galleryState.previewIndex];
-  previewCount.textContent=`${galleryState.previewIndex+1} / ${n}`;
+  const n=G.photos.length;if(!n)return;
+  G.previewIndex=(G.previewIndex+n)%n;
+  previewImage.src=G.photos[G.previewIndex];
+  previewCount.textContent=`${G.previewIndex+1} / ${n}`;
 }
-previewBack.onclick=()=>mainMode(galleryView);
-prevPhoto.onclick=()=>{galleryState.previewIndex--;updatePreview()};
-nextPhoto.onclick=()=>{galleryState.previewIndex++;updatePreview()};
-
-// Swipe single-photo preview
+previewBack.onclick=()=>{buildGallery();mainMode(galleryView)};
+prevPhoto.onclick=()=>{G.previewIndex--;updatePreview()};
+nextPhoto.onclick=()=>{G.previewIndex++;updatePreview()};
 let swipeX=0;
 previewImage.addEventListener('touchstart',e=>{if(e.touches.length===1)swipeX=e.touches[0].clientX},{passive:true});
 previewImage.addEventListener('touchend',e=>{
-  const x=e.changedTouches[0]?.clientX??swipeX, d=x-swipeX;
-  if(Math.abs(d)>45){galleryState.previewIndex+=d<0?1:-1;updatePreview()}
+  const x=e.changedTouches[0]?.clientX??swipeX,d=x-swipeX;
+  if(Math.abs(d)>45){G.previewIndex+=d<0?1:-1;updatePreview()}
 },{passive:true});
 
-// Pinch gesture on gallery: one pinch step changes one density level.
+// True continuous pinch: scale follows finger distance, no discrete mode switching.
 photoGrid.addEventListener('touchstart',e=>{
   if(e.touches.length===2){
     const a=e.touches[0],b=e.touches[1];
-    galleryState.pinchStart=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
+    G.lastDist=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
   }
-},{passive:true});
-photoGrid.addEventListener('touchend',e=>{
-  if(galleryState.pinchStart && e.touches.length<2){
-    // touchend no longer exposes both points reliably; use gesture direction from last move.
-    galleryState.pinchStart=0;
-  }
-},{passive:true});
-let pinchLast=0;
+},{passive:false});
 photoGrid.addEventListener('touchmove',e=>{
   if(e.touches.length!==2)return;
+  e.preventDefault();
   const a=e.touches[0],b=e.touches[1];
   const d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);
-  if(!pinchLast)pinchLast=d;
-  const delta=d-pinchLast;
-  if(Math.abs(delta)>34){
-    if(delta<0 && galleryState.zoom<3)galleryState.zoom++;
-    if(delta>0 && galleryState.zoom>0)galleryState.zoom--;
-    pinchLast=d; renderGallery();
+  if(G.lastDist){
+    const ratio=d/G.lastDist;
+    G.scale=clamp(G.scale*ratio,G.minScale,G.maxScale);
+    if(!renderRAF)renderRAF=requestAnimationFrame(()=>{renderRAF=0;applyScale(false)});
   }
-},{passive:true});
-photoGrid.addEventListener('touchend',()=>{pinchLast=0},{passive:true});
+  G.lastDist=d;
+},{passive:false});
+photoGrid.addEventListener('touchend',()=>{G.lastDist=0},{passive:true});
